@@ -8,25 +8,32 @@
 #endif
 
 #include "SoftwareSerial.h"
-#include "nextionUIMSG.h"
-#include "nextionUIEvents.h"
+#include "nextionUISyntax.h"
 
 class Nextion {
   private:
-    SoftwareSerial* _serial;
-    uint8_t read();
-    bool write(String command);
+    typedef void (*Pointer) ();
+
+    struct Callback {
+      Callback *next;
+      nexTouch touch;
+      Pointer pointer;
+    };
+
+    SoftwareSerial *_serial;
+    Callback *callbacks;
+
   public:
-    NextionEvents callbacks;
     Nextion(uint8_t rx, uint8_t tx);
-    uint8_t begin(uint32_t baud = 9600);
+    bool begin(uint16_t baud = 9600);
+    bool send(String command);
+    bool receipt();
+    void add(nexTouch touch, Pointer pointer);
+    void add(nexComponent component, nexEvent event, Pointer pointer);
 
-    int8_t loop();
-
-    int8_t page();
-    bool sleep();
-    bool show(uint8_t page);
-    bool wakeup();
+    Callback *callback(nexTouch touch, Pointer pointer);
+    nexCommand command(uint32_t code, nexEvent event);
+    nexCommand loop();
 };
 
 #endif
