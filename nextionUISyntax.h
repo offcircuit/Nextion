@@ -62,8 +62,3 @@ struct nexTouch {
   int8_t page, id;
   nexEvent event;
 };
-
-typedef struct nexCommand {
-  uint32_t code = 0UL;
-  nexEvent event = NULL;
-};

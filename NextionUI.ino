@@ -11,10 +11,12 @@ void setup() {
   nextion.add({2, 2, NEXTION_EVENT_RELEASE}, two);
   nextion.add({2, 3, NEXTION_EVENT_RELEASE}, three);
 
+  nextion.list();
   Serial.println("------------------------------------------------------- ");
 
   nextion.add({1, 1}, NEXTION_EVENT_RELEASE, call);
   nextion.add({2, 2}, NEXTION_EVENT_RELEASE, two_);
+  nextion.list();
 }
 
 void three() {
@@ -48,11 +50,8 @@ void cal() {
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  nexCommand c = nextion.loop();
-  if (c.code) {
-    Serial.println(c.code, HEX);
-    Serial.println(c.event);
+  uint8_t t;
+  if ((t =  nextion.listen()) != 0xFF) {
+    Serial.println((t));
   }
-  delay(1000);
 }
