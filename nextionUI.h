@@ -22,21 +22,17 @@ class Nextion {
 
     SoftwareSerial *_serial;
     Callback *callbacks;
-    uint16_t _x, _y;
-
+    
   public:
-    const uint16_t x, y;
-
     Nextion(uint8_t rx, uint8_t tx);
     bool begin(uint16_t baud = 9600);
-    bool transmit(String command);
-    void add(nexTouch touch, Pointer pointer);
-    void add(nexComponent component, nexEvent event, Pointer pointer);
+
+    bool receipt(char buffer[], size_t size);
+    char* listen();
 
     Callback *callback(nexTouch touch, Pointer pointer);
-
-    uint8_t listen();
-    size_t receipt(char *buffer, size_t size);
+    void add(nexTouch touch, Pointer pointer);
+    void add(nexComponent component, nexEvent event, Pointer pointer);
 
     void list() {
       Callback *item = callbacks;
@@ -45,7 +41,6 @@ class Nextion {
         item = item->next;
       }
     }
-
 };
 
 #endif

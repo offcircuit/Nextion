@@ -15,20 +15,20 @@
 #define NEXTION_CMD_INVALID_ESCAPE_CHARATER                     0x20
 #define NEXTION_CMD_VARIABLE_NAME_TOO_LONG                      0x23
 
-#define NEXTION_CMD_STARTUP                                     0x0006//
-#define NEXTION_CMD_SERIAL_BUFFER_OVERFLOW                      0x2404//
-#define NEXTION_CMD_TOUCH_EVENT                                 0x6507//
-#define NEXTION_CMD_CURRENT_PAGE                                0x6605
-#define NEXTION_CMD_TOUCH_COORDINATE_AWAKE                      0x6709//
-#define NEXTION_CMD_TOUCH_COORDINATE_SLEEP                      0x6809//
-#define NEXTION_CMD_STRING_DATA_ENCLOSED                        0x7009
-#define NEXTION_CMD_NUMERIC_DATA_ENCLOSED                       0x7108
-#define NEXTION_CMD_AUTO_ENTER_SLEEP                            0x8604//
-#define NEXTION_CMD_AUTO_ENTER_WAKEUP                           0x8704//
-#define NEXTION_CMD_READY                                       0x8804//
-#define NEXTION_CMD_START_MICROSD_UPDATE                        0x8904//
-#define NEXTION_CMD_TRANSPARENT_DATA_END                        0xFD04
-#define NEXTION_CMD_TRANSPARENT_DATA_READY                      0xFE04
+#define NEXTION_CMD_STARTUP                                     0x00//
+#define NEXTION_CMD_SERIAL_BUFFER_OVERFLOW                      0x24//
+#define NEXTION_CMD_TOUCH_EVENT                                 0x65//
+#define NEXTION_CMD_CURRENT_PAGE                                0x66
+#define NEXTION_CMD_TOUCH_COORDINATE_AWAKE                      0x67//
+#define NEXTION_CMD_TOUCH_COORDINATE_SLEEP                      0x68//
+#define NEXTION_CMD_STRING_DATA_ENCLOSED                        0x70
+#define NEXTION_CMD_NUMERIC_DATA_ENCLOSED                       0x71
+#define NEXTION_CMD_AUTO_ENTER_SLEEP                            0x86//
+#define NEXTION_CMD_AUTO_ENTER_WAKEUP                           0x87//
+#define NEXTION_CMD_READY                                       0x88//
+#define NEXTION_CMD_START_MICROSD_UPDATE                        0x89//
+#define NEXTION_CMD_TRANSPARENT_DATA_END                        0xFD
+#define NEXTION_CMD_TRANSPARENT_DATA_READY                      0xFE
 
 #define NEXIION_OBJ_PAGE                                        0x0000
 #define NEXIION_OBJ_TEXT                                        0x0000
