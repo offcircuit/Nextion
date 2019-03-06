@@ -1,4 +1,7 @@
-#define NEXTION_BKCMD_LEVEL 0x03
+#define NEXTION_DEFAULT_BAUD 9600
+
+#define NEXTION_UART_INSTRUCTION(s) ({String(s) + char(0xFF) + char(0xFF) + char(0xFF);})
+#define NEXTION_UART_SIZE 20
 
 #define NEXTION_CMD_INVALID_INSTRUCTION                         0x00
 #define NEXTION_CMD_INSTRUCTION_SUCESSFUL                       0x01
@@ -17,18 +20,18 @@
 #define NEXTION_CMD_INVALID_ESCAPE_CHARATER                     0x20
 #define NEXTION_CMD_VARIABLE_NAME_TOO_LONG                      0x23
 
-#define NEXTION_CMD_STARTUP                                     0x00//
-#define NEXTION_CMD_SERIAL_BUFFER_OVERFLOW                      0x24//
-#define NEXTION_CMD_TOUCH_EVENT                                 0x65//
-#define NEXTION_CMD_CURRENT_PAGE                                0x66
-#define NEXTION_CMD_TOUCH_COORDINATE_AWAKE                      0x67//
-#define NEXTION_CMD_TOUCH_COORDINATE_SLEEP                      0x68//
+#define NEXTION_CMD_STARTUP                                     0x00 // LISTEN
+#define NEXTION_CMD_SERIAL_BUFFER_OVERFLOW                      0x24 // LISTEN
+#define NEXTION_CMD_TOUCH_EVENT                                 0x65 // LISTEN
+#define NEXTION_CMD_CURRENT_PAGE                                0x66 // CURRENT
+#define NEXTION_CMD_TOUCH_COORDINATE_AWAKE                      0x67 // LISTEN
+#define NEXTION_CMD_TOUCH_COORDINATE_SLEEP                      0x68 // LISTEN
 #define NEXTION_CMD_STRING_DATA_ENCLOSED                        0x70
 #define NEXTION_CMD_NUMERIC_DATA_ENCLOSED                       0x71
-#define NEXTION_CMD_AUTO_ENTER_SLEEP                            0x86//
-#define NEXTION_CMD_AUTO_ENTER_WAKEUP                           0x87//
-#define NEXTION_CMD_READY                                       0x88//
-#define NEXTION_CMD_START_MICROSD_UPDATE                        0x89//
+#define NEXTION_CMD_AUTO_ENTER_SLEEP                            0x86 // LISTEN
+#define NEXTION_CMD_AUTO_ENTER_WAKEUP                           0x87 // LISTEN
+#define NEXTION_CMD_READY                                       0x88 // LISTEN
+#define NEXTION_CMD_START_MICROSD_UPDATE                        0x89 // LISTEN
 #define NEXTION_CMD_TRANSPARENT_DATA_END                        0xFD
 #define NEXTION_CMD_TRANSPARENT_DATA_READY                      0xFE
 

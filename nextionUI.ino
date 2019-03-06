@@ -1,12 +1,13 @@
-#include "nextionI.h"
+#include "INextion.h"
 
-NextionI nextion(10, 11);
+INextion nextion(10, 11);
 
 
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
-  nextion.begin();
+  Serial.print("Start .... ");
+  Serial.println(nextion.begin());
 
   nextion.event({1, 1, NEXTION_EVENT_RELEASE}, cal);
   nextion.event({1, 2, NEXTION_EVENT_RELEASE}, clo);
@@ -18,11 +19,12 @@ void setup() {
 
   nextion.event({1, 1}, NEXTION_EVENT_RELEASE, call);
   nextion.event({2, 2}, NEXTION_EVENT_RELEASE, two_);
+  nextion.detach({2, 3}, NEXTION_EVENT_RELEASE);
 }
 
 void seven() {
-  //Serial.println("executing... ");
-  //Serial.println("seven... ");
+  Serial.println("executing... ");
+  Serial.println("seven... ");
   int p = nextion.current();
   Serial.print("page -> ");
   Serial.println(p, HEX);
@@ -59,14 +61,14 @@ void cal() {
 }
 
 void loop() {
-  uint8_t *t =  nextion.listen();
+  uint8_t t =  nextion.listen();
   if (t) {
-    int p = nextion.current();
-    Serial.print(" loop page -> ");
+    int p = nextion._bkcmd;
+    Serial.print(" bkcmd -> ");
     Serial.println(p, HEX);
-    Serial.print(" cmd == ");
+    /*Serial.print(" cmd == ");
       Serial.println(t[0]);
-     /* Serial.print(" 2 ");
+      Serial.print(" 2 ");
       Serial.println(t[1]);
       Serial.print(" 3 ");
       Serial.println(t[2]);
