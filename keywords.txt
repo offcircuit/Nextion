@@ -1,28 +1,35 @@
-###########################################
+##################################################
 # Syntax Coloring Map For Nextion-library
-###########################################
+##################################################
 
-###########################################
-# Datatypes			(KEYWORD1)
-###########################################
+##################################################
+# Datatypes				(KEYWORD1)
+##################################################
 
-INextion			KEYWORD1
-Nextion				KEYWORD1
+INextion				KEYWORD1
+Nextion					KEYWORD1
 
-###########################################
-# Methods			(KEYWORD2)
-###########################################
+##################################################
+# Methods				(KEYWORD2)
+##################################################
 
-begin			KEYWORD2
-current			KEYWORD2
-detach			KEYWORD2
-event			KEYWORD2
-listen			KEYWORD2
-transmit		KEYWORD2
+begin					KEYWORD2
+current					KEYWORD2
+detach					KEYWORD2
+event					KEYWORD2
+listen					KEYWORD2
+transmit				KEYWORD2
 
-###########################################
-# Constants			(LITERAL1)
-###########################################
+##################################################
+# Constants				(LITERAL1)
+##################################################
+
+nexComponent				(LITERAL1)
+nexEvent				(LITERAL1)
+nexTouch				(LITERAL1)
+
+NEXTION_EVENT_RELEASE			(LITERAL1)
+NEXTION_EVENT_PRESS			(LITERAL1)
 
 NEXTION_CMD_STARTUP			(LITERAL1)
 NEXTION_CMD_SERIAL_BUFFER_OVERFLOW      (LITERAL1)
