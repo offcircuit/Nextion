@@ -1,0 +1,35 @@
+###########################################
+# Syntax Coloring Map For Nextion-library
+###########################################
+
+###########################################
+# Datatypes			(KEYWORD1)
+###########################################
+
+INextion			KEYWORD1
+Nextion				KEYWORD1
+
+###########################################
+# Methods			(KEYWORD2)
+###########################################
+
+begin			KEYWORD2
+current			KEYWORD2
+detach			KEYWORD2
+event			KEYWORD2
+listen			KEYWORD2
+transmit		KEYWORD2
+
+###########################################
+# Constants			(LITERAL1)
+###########################################
+
+NEXTION_CMD_STARTUP			(LITERAL1)
+NEXTION_CMD_SERIAL_BUFFER_OVERFLOW      (LITERAL1)
+NEXTION_CMD_TOUCH_EVENT                 (LITERAL1)
+NEXTION_CMD_TOUCH_COORDINATE_AWAKE      (LITERAL1)
+NEXTION_CMD_TOUCH_COORDINATE_SLEEP      (LITERAL1)
+NEXTION_CMD_AUTO_ENTER_SLEEP            (LITERAL1)
+NEXTION_CMD_AUTO_ENTER_WAKEUP           (LITERAL1)
+NEXTION_CMD_READY                       (LITERAL1)
+NEXTION_CMD_START_MICROSD_UPDATE        (LITERAL1)
