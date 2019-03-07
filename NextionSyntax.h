@@ -1,7 +1,6 @@
-#define NEXTION_NUMERIC(b1, b2, b3, b4)({(uint32_t)b4 << 24 | (uint32_t)b3 << 16 | (uint32_t)b2 << 8 | b1;})
-
-#define NEXTION_UART_INSTRUCTION(s) ({String(s) + char(0xFF) + char(0xFF) + char(0xFF);})
-#define NEXTION_UART_SIZE 255
+#define NEXTION_SERIAL_INSTRUCTION(s) ({String(s) + char(0xFF) + char(0xFF) + char(0xFF);})
+#define NEXTION_SERIAL_LENGTH 255
+#define NEXTION_SERIAL_CYCLES microsecondsToClockCycles(100)
 
 #define NEXTION_CMD_INVALID_INSTRUCTION                         0x00 //RECEIPT
 #define NEXTION_CMD_INSTRUCTION_SUCESSFUL                       0x01 //RECEIPT
@@ -32,27 +31,28 @@
 #define NEXTION_CMD_AUTO_ENTER_WAKEUP                           0x87 // LISTEN
 #define NEXTION_CMD_READY                                       0x88 // LISTEN
 #define NEXTION_CMD_START_MICROSD_UPDATE                        0x89 // LISTEN
-#define NEXTION_CMD_TRANSPARENT_DATA_END                        0xFD
-#define NEXTION_CMD_TRANSPARENT_DATA_READY                      0xFE
+#define NEXTION_CMD_TRANSPARENT_DATA_END                        0xFD // WAVE
+#define NEXTION_CMD_TRANSPARENT_DATA_READY                      0xFE // WAVE
+#define NEXTION_CMD_UNKNOW_MESSAGE                              0xFF // WAVE
 
-#define NEXIION_OBJ_PAGE                                        0x0000
-#define NEXIION_OBJ_TEXT                                        0x0000
-#define NEXIION_OBJ_SCRTEXT                                     0x0000
-#define NEXIION_OBJ_NUMBER                                      0x0000
-#define NEXIION_OBJ_BUTTON                                      0x0000
-#define NEXIION_OBJ_PROGRESSBAR                                 0x0000
-#define NEXIION_OBJ_PICTURE                                     0x0000
-#define NEXIION_OBJ_CROP                                        0x0000
-#define NEXIION_OBJ_HOTSPOT                                     0x0000
-#define NEXIION_OBJ_GAUGE                                       0x0000
-#define NEXIION_OBJ_WAVEFORM                                    0x0000
-#define NEXIION_OBJ_SLIDER                                      0x0000
-#define NEXIION_OBJ_TIMER                                       0x0000
-#define NEXIION_OBJ_VARIABLE                                    0x0000
-#define NEXIION_OBJ_DSBUTTON                                    0x0000
-#define NEXIION_OBJ_CHECKBOX                                    0x0000
-#define NEXIION_OBJ_RADIO                                       0x0000
-#define NEXIION_OBJ_QRCODE                                      0x0000
+#define NEXIION_OBJ_PAGE                                        0x00
+#define NEXIION_OBJ_TEXT                                        0x00
+#define NEXIION_OBJ_SCRTEXT                                     0x00
+#define NEXIION_OBJ_NUMBER                                      0x00
+#define NEXIION_OBJ_BUTTON                                      0x00
+#define NEXIION_OBJ_PROGRESSBAR                                 0x00
+#define NEXIION_OBJ_PICTURE                                     0x00
+#define NEXIION_OBJ_CROP                                        0x00
+#define NEXIION_OBJ_HOTSPOT                                     0x00
+#define NEXIION_OBJ_GAUGE                                       0x00
+#define NEXIION_OBJ_WAVEFORM                                    0x00
+#define NEXIION_OBJ_SLIDER                                      0x00
+#define NEXIION_OBJ_TIMER                                       0x00
+#define NEXIION_OBJ_VARIABLE                                    0x00
+#define NEXIION_OBJ_DSBUTTON                                    0x00
+#define NEXIION_OBJ_CHECKBOX                                    0x00
+#define NEXIION_OBJ_RADIO                                       0x00
+#define NEXIION_OBJ_QRCODE                                      0x00
 
 struct nextionComponent {
   int8_t page, id;

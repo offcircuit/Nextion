@@ -1,93 +1,35 @@
 #include "Nextion.h"
 
 Nextion nextion(10, 11);
-nextionComponent bt {1, 1};
-nextionTouch bt2 {1, 2, NEXTION_EVENT_RELEASE};
-
-uint32_t r(int8_t b1, int8_t b2, int8_t b3, int8_t b4)
-{
-  uint32_t tt = (uint32_t)b4 << 24 | (uint32_t)b3 << 16 | (uint32_t)b2 << 8 | b1;
-  return  tt;
-}
 
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
-  
-  Serial.print("Start .... ");
-  Serial.println(nextion.begin());
+
+ Serial.print("Start .... ");
+  nextion.begin();
   delay(100);
-  Serial.println("------------------------------------------------------- ");
+   Serial.println("------------------------------------------------------- END");
 
-  nextion.transmit("home.tDate.txt=\"hello\"");
+  Serial.println(nextion.property("0x04030201"));
+  size_t k = 500;
+  uint8_t r[k];
+  for (size_t i = 0; i < k; i++) {
+    r[i] = random(254);
+  }
 
-  Serial.print("home.tDate.objname =  ");
-  Serial.println(nextion.getAttribute("home.tDate.txt"));
-
-  Serial.println("------------------------------------------------------- ");
-
-  nextion.event(bt, NEXTION_EVENT_RELEASE, cal);
-  nextion.event(bt2, clo);
-  nextion.event({2, 2, NEXTION_EVENT_RELEASE}, two);
-  nextion.event({2, 3, NEXTION_EVENT_RELEASE}, three);
-  nextion.event({2, 7, NEXTION_EVENT_RELEASE}, seven);
-  nextion.event({1, 1, NEXTION_EVENT_RELEASE}, call);
-  nextion.event({2, 2, NEXTION_EVENT_RELEASE}, two_);
-  nextion.detach({2, 3, NEXTION_EVENT_RELEASE});
-  nextion.event({2, 3, NEXTION_EVENT_RELEASE}, three);
-  nextion.detach({2, 3, NEXTION_EVENT_RELEASE});
-  nextion.detach({1, 1, NEXTION_EVENT_RELEASE});
-}
-
-void seven() {
-  Serial.println("executing... ");
-  Serial.println("seven... ");
-  int p = nextion.current();
-  Serial.print("page -> ");
-  Serial.println(p, HEX);
-}
-
-void three() {
-  Serial.println("executing... ");
-  Serial.println("three... ");
-}
-
-void call() {
-  Serial.println("executing... ");
-  Serial.println("call... ");
-}
-
-void two_() {
-  Serial.println("executing... ");
-  Serial.println("two...two ");
-}
-
-void two() {
-  Serial.println("executing... ");
-  Serial.println("two... ");
-}
-
-void clo() {
-  Serial.println("executing... ");
-  Serial.println("clock... ");
-}
-
-void cal() {
-  Serial.println("executing... ");
-  Serial.println("calendar... ");
+  delay(100);
+  Serial.println(nextion.wave(2, 0, r, k), HEX);
+  /*
+  */
+  Serial.println(nextion.page());
+  Serial.println("------------------------------------------------------- END");
 }
 
 void loop() {
   uint8_t tt =  nextion.listen();
-  if (tt) {
-    Serial.print(" cmd -> ");
+  if (sizeof(tt)) {
     Serial.println(tt, HEX);
-
-    for (uint8_t i = 0; i < nextion.__length__; i++) {
-      Serial.print("  ");
-      Serial.print(i);
-      Serial.print("  0x");
-      Serial.println((uint8_t)nextion.__buffer__[i], HEX);
-    }
   }
+  delay(2000);
 }

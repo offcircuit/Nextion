@@ -9,10 +9,11 @@
 #include "Arduino.h"
 
 class INextion {
+  private:
+
   protected:
     typedef void (*nextionPointer) ();
 
-  private:
     struct nextionCallback {
       nextionCallback *next;
       nextionTouch touch;
@@ -23,24 +24,23 @@ class INextion {
     nextionCallback *callback(nextionTouch touch, nextionPointer pointer);
 
   public:
-    uint8_t __buffer__[NEXTION_UART_SIZE], __length__;
+    uint8_t __buffer__[NEXTION_SERIAL_LENGTH], __length__;
     nextionCallback *callbacks;
 
     INextion(uint8_t rx, uint8_t tx);
     bool begin();
 
-    uint8_t transmit(String instruction);
     bool receipt();
+    uint8_t transmit(String instruction);
 
-    String getAttribute(String name);
+    int16_t page();
+    String property(String name);
+    uint8_t wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length);
 
     void detach(nextionTouch touch);
-    void event(nextionTouch touch, nextionPointer pointer);
     void detach(nextionComponent component, nextionEvent event);
+    void event(nextionTouch touch, nextionPointer pointer);
     void event(nextionComponent component, nextionEvent event, nextionPointer pointer);
-
-    int16_t current();
-
     uint8_t listen();
 };
 
@@ -48,7 +48,6 @@ class Nextion: public INextion {
   private:
   public:
     Nextion(uint8_t rx, uint8_t tx): INextion(rx, tx) {};
-
 };
 
 #endif

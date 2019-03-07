@@ -3,6 +3,7 @@
 INextion::INextion(uint8_t rx, uint8_t tx) {
   _serial = new SoftwareSerial(rx, tx);
   _serial->begin(9600);
+  _serial->flush();
 };
 
 bool INextion::begin() {
@@ -10,16 +11,52 @@ bool INextion::begin() {
 }
 
 bool INextion::receipt() {
+  int16_t i = NEXTION_SERIAL_CYCLES;
   __length__ = 1;
-  do if (_serial->available()) __buffer__[__length__++] = _serial->read();
-  while ((__length__ < 4) || ((__buffer__[__length__ - 1] & __buffer__[__length__ - 2] & __buffer__[__length__ - 3]) != 0xFF));
+  do {
+    if (_serial->available()) __buffer__[__length__++] = _serial->read();
+    if (!i--) return false;
+  } while ((__length__ < 4) || ((__buffer__[__length__ - 1] & __buffer__[__length__ - 2] & __buffer__[__length__ - 3]) != 0xFF));
+  return true;
 }
 
 uint8_t INextion::transmit(String instruction) {
-  _serial->print(NEXTION_UART_INSTRUCTION(instruction));
+  _serial->print(NEXTION_SERIAL_INSTRUCTION(instruction));
   while (!_serial->available());
   if ((__buffer__[0] = _serial->read()) && (receipt())) return __buffer__[0];
   return 0;
+}
+
+int16_t INextion::page() {
+  if (transmit("sendme") && (__buffer__[0] == NEXTION_CMD_CURRENT_PAGE)) return __buffer__[1];
+  return -1;
+}
+
+String INextion::property(String name) {
+  if (transmit("get " + name)) {
+    switch (__buffer__[0]) {
+
+      case  NEXTION_CMD_NUMERIC_DATA_ENCLOSED:
+        return String((uint32_t)__buffer__[4] << 24 | (uint32_t)__buffer__[3] << 16 | (uint32_t)__buffer__[2] << 8 | __buffer__[1]);
+        break;
+
+      case NEXTION_CMD_STRING_DATA_ENCLOSED:
+        String s = "";
+        for (uint8_t i = 1; i < __length__ - 3; s += String(char(__buffer__[i++])));
+        return s;
+        break;
+    }
+  }
+  return __buffer__[0];
+}
+
+uint8_t INextion::wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length) {
+  if (transmit("addt " + String(id) + "," + String(channel) + "," + String(length)) && (__buffer__[0] == NEXTION_CMD_TRANSPARENT_DATA_READY)) {
+    for (size_t i = 0; i < length; i++) _serial->write((size_t)data[i]);
+    while (!_serial->available());
+    if ((__buffer__[0] = _serial->read()) && (receipt())) return __buffer__[0];
+  }
+  return __buffer__[0];
 }
 
 INextion::nextionCallback *INextion::callback(nextionTouch touch, nextionPointer pointer) {
@@ -42,6 +79,10 @@ void INextion::detach(nextionTouch touch) {
   }
 }
 
+void INextion::detach(nextionComponent component, nextionEvent event) {
+  detach({component.page, component.id, event});
+}
+
 void INextion::event(nextionTouch touch, nextionPointer pointer) {
   if (callbacks) {
     nextionCallback *item = callbacks;
@@ -54,6 +95,10 @@ void INextion::event(nextionTouch touch, nextionPointer pointer) {
     item->next = callback(touch, pointer);
 
   } else callbacks = callback(touch, pointer);
+}
+
+void INextion::event(nextionComponent component, nextionEvent event, nextionPointer pointer) {
+  INextion::event({component.page, component.id, event}, pointer);
 }
 
 uint8_t INextion::listen() {
@@ -72,52 +117,21 @@ uint8_t INextion::listen() {
             }
             item = item->next;
           }
+          break;
         }
-        break;
 
       case NEXTION_CMD_TOUCH_COORDINATE_AWAKE:
       case NEXTION_CMD_TOUCH_COORDINATE_SLEEP:
-        if (receipt()) break;
-
       case NEXTION_CMD_SERIAL_BUFFER_OVERFLOW:
       case NEXTION_CMD_AUTO_ENTER_SLEEP:
       case NEXTION_CMD_AUTO_ENTER_WAKEUP:
       case NEXTION_CMD_READY:
       case NEXTION_CMD_START_MICROSD_UPDATE:
         if (receipt()) break;
+
+      default: return NEXTION_CMD_UNKNOW_MESSAGE;
     }
     return __buffer__[0];
   }
   return 0;
-}
-
-void INextion::detach(nextionComponent component, nextionEvent event) {
-  detach({component.page, component.id, event});
-}
-
-void INextion::event(nextionComponent component, nextionEvent event, nextionPointer pointer) {
-  INextion::event({component.page, component.id, event}, pointer);
-}
-
-String INextion::getAttribute(String name) {
-  if (transmit("get " + name)) {
-    switch (__buffer__[0]) {
-
-      case  NEXTION_CMD_NUMERIC_DATA_ENCLOSED:
-        return String(NEXTION_NUMERIC(__buffer__[1], __buffer__[2], __buffer__[3], __buffer__[4]));
-        break;
-
-      case NEXTION_CMD_STRING_DATA_ENCLOSED:
-        String s = "";
-        for (uint8_t i = 1; i < __length__ - 3;) s += String(char(__buffer__[i++]));
-        return s;
-        break;
-    }
-  }
-  return __buffer__[0];
-}
-
-int16_t INextion::current() {
-  if (transmit("sendme") && (__buffer__[0] == NEXTION_CMD_CURRENT_PAGE)) return __buffer__[1];
-  return -1;
 }

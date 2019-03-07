@@ -3,15 +3,19 @@
 ##################################################
 
 ##################################################
-# Datatypes				(KEYWORD1)
+# Classes, datatypes and C++ keywords	(KEYWORD1)
 ##################################################
 
 INextion	KEYWORD1
 Nextion	KEYWORD1
 
-nexComponent	KEYWORD1
-nexEvent	KEYWORD1
-nexTouch	KEYWORD1
+nextionComponent	KEYWORD1
+nextionEvent	KEYWORD1
+nextionTouch	KEYWORD1
+
+##################################################
+# Methods and Functions			(KEYWORD2)
+##################################################
 
 id	KEYWORD1
 page	KEYWORD1
@@ -22,18 +26,18 @@ event	KEYWORD2
 ##################################################
 
 begin	KEYWORD2
-current	KEYWORD2
+page	KEYWORD2
 detach	KEYWORD2
 event	KEYWORD2
 listen	KEYWORD2
 transmit	KEYWORD2
+receipt	KEYWORD2
+property	KEYWORD2
+wave	KEYWORD2
 
 ##################################################
 # Constants				(LITERAL1)
 ##################################################
-
-__buffer__	LITERAL1
-__length__	LITERAL1
 
 NEXTION_EVENT_RELEASE	LITERAL1
 NEXTION_EVENT_PRESS	LITERAL1
@@ -44,7 +48,20 @@ NEXTION_CMD_SERIAL_BUFFER_OVERFLOW	LITERAL1
 NEXTION_CMD_TOUCH_EVENT	LITERAL1
 NEXTION_CMD_TOUCH_COORDINATE_AWAKE	LITERAL1
 NEXTION_CMD_TOUCH_COORDINATE_SLEEP	LITERAL1
+NEXTION_CMD_STRING_DATA_ENCLOSED	LITERAL1
+NEXTION_CMD_NUMERIC_DATA_ENCLOSED	LITERAL1
 NEXTION_CMD_AUTO_ENTER_SLEEP	LITERAL1
 NEXTION_CMD_AUTO_ENTER_WAKEUP	LITERAL1
 NEXTION_CMD_READY	LITERAL1
 NEXTION_CMD_START_MICROSD_UPDATE	LITERAL1
+NEXTION_CMD_TRANSPARENT_DATA_END	LITERAL1
+NEXTION_CMD_TRANSPARENT_DATA_READY	LITERAL1
+NEXTION_CMD_UNKNOW_MESSAGE	LITERAL1
+
+##################################################
+# Built-in variables			(LITERAL2)
+##################################################
+
+__buffer__	LITERAL1
+__length__	LITERAL1
+
