@@ -20,59 +20,22 @@ void setup() {
   Serial.println("------------------------------------------------------- ");
 
   nextion.transmit("home.tDate.txt=\"hello\"");
-  for (uint8_t i = 0; i < nextion.__length__; i++) {
-    Serial.print("  ");
-    Serial.print(i);
-    Serial.print("  ");
-    Serial.println((uint8_t)nextion.__buffer__[i], HEX);
-  }
-
-  Serial.println("------------------------------------------------------- ");
 
   Serial.print("home.tDate.objname =  ");
   Serial.println(nextion.getAttribute("home.tDate.txt"));
-  Serial.print("len =  ");
-  Serial.println(nextion.__length__);
-
-  for (uint8_t i = 0; i < nextion.__length__; i++) {
-    Serial.print("  ");
-    Serial.print(i);
-    Serial.print("  ");
-    Serial.println((uint8_t)nextion.__buffer__[i], HEX);
-  }
 
   Serial.println("------------------------------------------------------- ");
-
-  Serial.print("len =  ");
-  Serial.println(nextion.__length__);
-
-  Serial.println("------------------------------------------------------- ");
-
-  for (uint8_t i = 0; i < nextion.__length__; i++) {
-    Serial.print("  ");
-    Serial.print(i);
-    Serial.print("  ");
-    Serial.println((uint8_t)nextion.__buffer__[i], HEX);
-  }
-
-  Serial.println("------------------------------------------------------- ");
-
 
   nextion.event(bt, NEXTION_EVENT_RELEASE, cal);
   nextion.event(bt2, clo);
   nextion.event({2, 2, NEXTION_EVENT_RELEASE}, two);
   nextion.event({2, 3, NEXTION_EVENT_RELEASE}, three);
   nextion.event({2, 7, NEXTION_EVENT_RELEASE}, seven);
-
-  Serial.println("------------------------------------------------------- ");
   nextion.event({1, 1, NEXTION_EVENT_RELEASE}, call);
   nextion.event({2, 2, NEXTION_EVENT_RELEASE}, two_);
   nextion.detach({2, 3, NEXTION_EVENT_RELEASE});
-  Serial.println("------------------------------------------------------- ");
   nextion.event({2, 3, NEXTION_EVENT_RELEASE}, three);
-  Serial.println("------------------------------------------------------- ");
   nextion.detach({2, 3, NEXTION_EVENT_RELEASE});
-  Serial.println("------------------------------------------------------- ");
   nextion.detach({1, 1, NEXTION_EVENT_RELEASE});
 }
 
@@ -87,7 +50,6 @@ void seven() {
 void three() {
   Serial.println("executing... ");
   Serial.println("three... ");
-  //  list();
 }
 
 void call() {
@@ -124,8 +86,8 @@ void loop() {
     for (uint8_t i = 0; i < nextion.__length__; i++) {
       Serial.print("  ");
       Serial.print(i);
-      Serial.print("  ");
-      Serial.println((uint8_t)nextion.__buffer__[i], DEC);
+      Serial.print("  0x");
+      Serial.println((uint8_t)nextion.__buffer__[i], HEX);
     }
   }
 }

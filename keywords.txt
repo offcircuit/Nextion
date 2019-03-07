@@ -32,8 +32,8 @@ transmit	KEYWORD2
 # Constants				(LITERAL1)
 ##################################################
 
-__buffer	LITERAL1
-__length	LITERAL1
+__buffer__	LITERAL1
+__length__	LITERAL1
 
 NEXTION_EVENT_RELEASE	LITERAL1
 NEXTION_EVENT_PRESS	LITERAL1

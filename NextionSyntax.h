@@ -1,7 +1,7 @@
-#define NEXTION_NUMERIC_CONVERT(b1, b2, b3, b4)({(uint32_t)b4 << 24 | (uint32_t)b3 << 16 | (uint32_t)b2 << 8 | b1;})
+#define NEXTION_NUMERIC(b1, b2, b3, b4)({(uint32_t)b4 << 24 | (uint32_t)b3 << 16 | (uint32_t)b2 << 8 | b1;})
 
 #define NEXTION_UART_INSTRUCTION(s) ({String(s) + char(0xFF) + char(0xFF) + char(0xFF);})
-#define NEXTION_UART_SIZE 250
+#define NEXTION_UART_SIZE 255
 
 #define NEXTION_CMD_INVALID_INSTRUCTION                         0x00 //RECEIPT
 #define NEXTION_CMD_INSTRUCTION_SUCESSFUL                       0x01 //RECEIPT

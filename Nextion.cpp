@@ -9,6 +9,12 @@ bool INextion::begin() {
   return transmit("bkcmd=3") && transmit("page 0") && transmit("baud=9600");
 }
 
+bool INextion::receipt() {
+  __length__ = 1;
+  do if (_serial->available()) __buffer__[__length__++] = _serial->read();
+  while ((__length__ < 4) || ((__buffer__[__length__ - 1] & __buffer__[__length__ - 2] & __buffer__[__length__ - 3]) != 0xFF));
+}
+
 uint8_t INextion::transmit(String instruction) {
   _serial->print(NEXTION_UART_INSTRUCTION(instruction));
   while (!_serial->available());
@@ -36,10 +42,6 @@ void INextion::detach(nextionTouch touch) {
   }
 }
 
-void INextion::detach(nextionComponent component, nextionEvent event) {
-  detach({component.page, component.id, event});
-}
-
 void INextion::event(nextionTouch touch, nextionPointer pointer) {
   if (callbacks) {
     nextionCallback *item = callbacks;
@@ -54,16 +56,11 @@ void INextion::event(nextionTouch touch, nextionPointer pointer) {
   } else callbacks = callback(touch, pointer);
 }
 
-void INextion::event(nextionComponent component, nextionEvent event, nextionPointer pointer) {
-  INextion::event({component.page, component.id, event}, pointer);
-}
-
 uint8_t INextion::listen() {
   if (_serial->available() > 3) {
     switch ((__buffer__[0] = _serial->read())) {
       case NEXTION_CMD_STARTUP:
-        if (receipt() && (__buffer__[1] == 0x00) && (__buffer__[2] == 0x00)) return NEXTION_CMD_STARTUP;
-        break;
+        if (receipt() && (__buffer__[1] == 0x00) && (__buffer__[2] == 0x00)) break;
 
       case NEXTION_CMD_TOUCH_EVENT:
         if (receipt()) {
@@ -71,52 +68,43 @@ uint8_t INextion::listen() {
           while (item) {
             if ((item->touch.page == __buffer__[1]) && (item->touch.id == __buffer__[2]) && (item->touch.event == __buffer__[3]) && (__buffer__[7] = (bool)item->pointer) && __length__++) {
               item->pointer();
-              return NEXTION_CMD_TOUCH_EVENT;
+              break;
             }
             item = item->next;
           }
-          return NEXTION_CMD_TOUCH_EVENT;
         }
         break;
 
       case NEXTION_CMD_TOUCH_COORDINATE_AWAKE:
       case NEXTION_CMD_TOUCH_COORDINATE_SLEEP:
-        if (receipt()) return __buffer__[0];
-        break;
+        if (receipt()) break;
 
       case NEXTION_CMD_SERIAL_BUFFER_OVERFLOW:
       case NEXTION_CMD_AUTO_ENTER_SLEEP:
       case NEXTION_CMD_AUTO_ENTER_WAKEUP:
       case NEXTION_CMD_READY:
       case NEXTION_CMD_START_MICROSD_UPDATE:
-        if (receipt()) return __buffer__[0];
-        break;
+        if (receipt()) break;
     }
+    return __buffer__[0];
   }
   return 0;
 }
 
-int16_t Nextion::current() {
-  if (transmit("sendme") && (__buffer__[0] == NEXTION_CMD_CURRENT_PAGE)) return __buffer__[1];
-  return -1;
+void INextion::detach(nextionComponent component, nextionEvent event) {
+  detach({component.page, component.id, event});
 }
 
-int8_t INextion::receipt() {
-  __length__ = 1;
-  delayMicroseconds(500);
-  do {
-    __buffer__[__length__++] = _serial->read();
-  } while (_serial->available());
-
-  return ((__buffer__[__length__ - 1] & __buffer__[__length__ - 2] & __buffer__[__length__ - 3]) == 0xFF);
+void INextion::event(nextionComponent component, nextionEvent event, nextionPointer pointer) {
+  INextion::event({component.page, component.id, event}, pointer);
 }
 
-String Nextion::getAttribute(String name) {
+String INextion::getAttribute(String name) {
   if (transmit("get " + name)) {
     switch (__buffer__[0]) {
 
       case  NEXTION_CMD_NUMERIC_DATA_ENCLOSED:
-        return String(NEXTION_NUMERIC_CONVERT(__buffer__[1], __buffer__[2], __buffer__[3], __buffer__[4]));
+        return String(NEXTION_NUMERIC(__buffer__[1], __buffer__[2], __buffer__[3], __buffer__[4]));
         break;
 
       case NEXTION_CMD_STRING_DATA_ENCLOSED:
@@ -127,4 +115,9 @@ String Nextion::getAttribute(String name) {
     }
   }
   return __buffer__[0];
+}
+
+int16_t INextion::current() {
+  if (transmit("sendme") && (__buffer__[0] == NEXTION_CMD_CURRENT_PAGE)) return __buffer__[1];
+  return -1;
 }
