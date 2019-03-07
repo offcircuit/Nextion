@@ -1,8 +1,10 @@
-#define NEXTION_UART_INSTRUCTION(s) ({String(s) + char(0xFF) + char(0xFF) + char(0xFF);})
-#define NEXTION_UART_SIZE 20
+#define NEXTION_NUMERIC_CONVERT(b1, b2, b3, b4)({(uint32_t)b4 << 24 | (uint32_t)b3 << 16 | (uint32_t)b2 << 8 | b1;})
 
-#define NEXTION_CMD_INVALID_INSTRUCTION                         0x00
-#define NEXTION_CMD_INSTRUCTION_SUCESSFUL                       0x01
+#define NEXTION_UART_INSTRUCTION(s) ({String(s) + char(0xFF) + char(0xFF) + char(0xFF);})
+#define NEXTION_UART_SIZE 250
+
+#define NEXTION_CMD_INVALID_INSTRUCTION                         0x00 //RECEIPT
+#define NEXTION_CMD_INSTRUCTION_SUCESSFUL                       0x01 //RECEIPT
 #define NEXTION_CMD_INVALID_COMPONENT_ID                        0x02
 #define NEXTION_CMD_INVALID_PAGE_ID                             0x03
 #define NEXTION_CMD_INVALID_PICTURE_ID                          0x04
@@ -24,8 +26,8 @@
 #define NEXTION_CMD_CURRENT_PAGE                                0x66 // CURRENT
 #define NEXTION_CMD_TOUCH_COORDINATE_AWAKE                      0x67 // LISTEN
 #define NEXTION_CMD_TOUCH_COORDINATE_SLEEP                      0x68 // LISTEN
-#define NEXTION_CMD_STRING_DATA_ENCLOSED                        0x70
-#define NEXTION_CMD_NUMERIC_DATA_ENCLOSED                       0x71
+#define NEXTION_CMD_STRING_DATA_ENCLOSED                        0x70 // GETATTRIBUTE
+#define NEXTION_CMD_NUMERIC_DATA_ENCLOSED                       0x71 // GETATTRIBUTE
 #define NEXTION_CMD_AUTO_ENTER_SLEEP                            0x86 // LISTEN
 #define NEXTION_CMD_AUTO_ENTER_WAKEUP                           0x87 // LISTEN
 #define NEXTION_CMD_READY                                       0x88 // LISTEN
@@ -52,24 +54,16 @@
 #define NEXIION_OBJ_RADIO                                       0x0000
 #define NEXIION_OBJ_QRCODE                                      0x0000
 
-struct nexComponent {
+struct nextionComponent {
   int8_t page, id;
 };
 
-enum nexEvent {
+enum nextionEvent {
   NEXTION_EVENT_RELEASE,
   NEXTION_EVENT_PRESS
 };
 
-struct nexTouch {
+struct nextionTouch {
   int8_t page, id;
-  nexEvent event;
-};
-
-typedef void (*Pointer) ();
-
-struct Callback {
-  Callback *next;
-  nexTouch touch;
-  Pointer pointer;
+  nextionEvent event;
 };

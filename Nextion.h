@@ -1,36 +1,46 @@
-#ifndef INextion_H
-#define INextion_H
+#ifndef INEXTION_H
+#define INEXTION_H
+
+#ifndef NEXTION_H
+#define NEXTION_H
 
 #include "SoftwareSerial.h"
 #include "NextionSyntax.h"
+#include "Arduino.h"
 
 class INextion {
   private:
+    typedef void (*nextionPointer) ();
+
+    struct nextionCallback {
+      nextionCallback *next;
+      nextionTouch touch;
+      nextionPointer pointer;
+    };
+
     SoftwareSerial *_serial;
-    Callback *callback(nexTouch touch, Pointer pointer);
+    nextionCallback *callback(nextionTouch touch, nextionPointer pointer);
 
   protected:
-    bool receipt(uint8_t size);
+    INextion(uint8_t rx, uint8_t tx);
+    int8_t receipt();
 
   public:
-    uint8_t __buffer[NEXTION_UART_SIZE], __length;
-    Callback *callbacks;
+    uint8_t __buffer__[NEXTION_UART_SIZE], __length__;
+    nextionCallback *callbacks;
 
-    INextion(uint8_t rx, uint8_t tx);
     bool begin();
 
-    uint8_t transmit(String instruction, uint8_t size = 4);
+    uint8_t transmit(String instruction);
 
-    void detach(nexTouch touch);
-    void detach(nexComponent component, nexEvent event);
-    void event(nexTouch touch, Pointer pointer);
-    void event(nexComponent component, nexEvent event, Pointer pointer);
+
+    void detach(nextionTouch touch);
+    void detach(nextionComponent component, nextionEvent event);
+    void event(nextionTouch touch, nextionPointer pointer);
+    void event(nextionComponent component, nextionEvent event, nextionPointer pointer);
 
     uint8_t listen();
 };
-
-#ifndef Nextion_H
-#define Nextion_H
 
 class Nextion: public INextion {
   private:
@@ -38,6 +48,7 @@ class Nextion: public INextion {
     Nextion(uint8_t rx, uint8_t tx): INextion(rx, tx) {};
 
     int16_t current();
+    String getAttribute(String name);
 };
 
 #endif
