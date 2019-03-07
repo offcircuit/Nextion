@@ -1,62 +1,67 @@
 #include "Nextion.h"
 
-INextion::INextion(uint8_t rx, uint8_t tx) {
+uint8_t NEXBUF[NEXTION_SERIAL_LENGTH];
+uint8_t NEXBUFLEN;
+
+INextion::INextion(uint8_t rx, uint8_t tx, uint32_t baud = 9600) {
   _serial = new SoftwareSerial(rx, tx);
-  _serial->begin(9600);
-  _serial->flush();
+  _serial->begin(baud);
 };
 
 bool INextion::begin() {
-  return transmit("bkcmd=3") && transmit("page 0") && transmit("baud=9600");
+  return transmit("bkcmd=3") && transmit("page 0");
+}
+
+bool INextion::baud(uint32_t baud) {
+  if (transmit("baud=" + String(baud))) _serial->begin(baud);
+  return NEXBUF[0];
 }
 
 bool INextion::receipt() {
-  int16_t i = NEXTION_SERIAL_CYCLES;
-  __length__ = 1;
-  do {
-    if (_serial->available()) __buffer__[__length__++] = _serial->read();
-    if (!i--) return false;
-  } while ((__length__ < 4) || ((__buffer__[__length__ - 1] & __buffer__[__length__ - 2] & __buffer__[__length__ - 3]) != 0xFF));
-  return true;
+  int16_t cycle = NEXTION_SERIAL_CYCLES;
+  NEXBUFLEN = 1;
+  do if (_serial->available()) NEXBUF[NEXBUFLEN++] = _serial->read();
+  while (cycle-- && ((NEXBUFLEN < 4) || ((NEXBUF[NEXBUFLEN - 1] & NEXBUF[NEXBUFLEN - 2] & NEXBUF[NEXBUFLEN - 3]) != 0xFF)));
+  return cycle;
 }
 
 uint8_t INextion::transmit(String instruction) {
   _serial->print(NEXTION_SERIAL_INSTRUCTION(instruction));
   while (!_serial->available());
-  if ((__buffer__[0] = _serial->read()) && (receipt())) return __buffer__[0];
+  if ((NEXBUF[0] = _serial->read()) && (receipt())) return NEXBUF[0];
   return 0;
 }
 
 int16_t INextion::page() {
-  if (transmit("sendme") && (__buffer__[0] == NEXTION_CMD_CURRENT_PAGE)) return __buffer__[1];
+  if (transmit("sendme") && (NEXBUF[0] == NEXTION_CMD_CURRENT_PAGE)) return NEXBUF[1];
   return -1;
 }
 
-String INextion::property(String name) {
-  if (transmit("get " + name)) {
-    switch (__buffer__[0]) {
+String INextion::read(String property) {
+  if (transmit("get " + property)) {
+    switch (NEXBUF[0]) {
 
       case  NEXTION_CMD_NUMERIC_DATA_ENCLOSED:
-        return String((uint32_t)__buffer__[4] << 24 | (uint32_t)__buffer__[3] << 16 | (uint32_t)__buffer__[2] << 8 | __buffer__[1]);
+        return String((uint32_t)NEXBUF[4] << 24 | (uint32_t)NEXBUF[3] << 16 | (uint32_t)NEXBUF[2] << 8 | NEXBUF[1]);
         break;
 
       case NEXTION_CMD_STRING_DATA_ENCLOSED:
         String s = "";
-        for (uint8_t i = 1; i < __length__ - 3; s += String(char(__buffer__[i++])));
+        for (uint8_t i = 1; i < NEXBUFLEN - 3; s += String(char(NEXBUF[i++])));
         return s;
         break;
     }
   }
-  return __buffer__[0];
+  return NEXBUF[0];
 }
 
 uint8_t INextion::wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length) {
-  if (transmit("addt " + String(id) + "," + String(channel) + "," + String(length)) && (__buffer__[0] == NEXTION_CMD_TRANSPARENT_DATA_READY)) {
-    for (size_t i = 0; i < length; i++) _serial->write((size_t)data[i]);
+  if (transmit("addt " + String(id) + "," + String(channel) + "," + String(length)) && (NEXBUF[0] == NEXTION_CMD_TRANSPARENT_DATA_READY)) {
+    for (size_t i = 0; i < length;) _serial->write(data[i++]);
     while (!_serial->available());
-    if ((__buffer__[0] = _serial->read()) && (receipt())) return __buffer__[0];
+    if ((NEXBUF[0] = _serial->read()) && (receipt())) return NEXBUF[0];
   }
-  return __buffer__[0];
+  return NEXBUF[0];
 }
 
 INextion::nextionCallback *INextion::callback(nextionTouch touch, nextionPointer pointer) {
@@ -79,7 +84,7 @@ void INextion::detach(nextionTouch touch) {
   }
 }
 
-void INextion::detach(nextionComponent component, nextionEvent event) {
+void INextion::detach(nextionComponent component, bool event) {
   detach({component.page, component.id, event});
 }
 
@@ -97,21 +102,23 @@ void INextion::event(nextionTouch touch, nextionPointer pointer) {
   } else callbacks = callback(touch, pointer);
 }
 
-void INextion::event(nextionComponent component, nextionEvent event, nextionPointer pointer) {
+void INextion::event(nextionComponent component, bool event, nextionPointer pointer) {
   INextion::event({component.page, component.id, event}, pointer);
 }
 
 uint8_t INextion::listen() {
   if (_serial->available() > 3) {
-    switch ((__buffer__[0] = _serial->read())) {
+    switch ((NEXBUF[0] = _serial->read())) {
+
       case NEXTION_CMD_STARTUP:
-        if (receipt() && (__buffer__[1] == 0x00) && (__buffer__[2] == 0x00)) break;
+        if (receipt() && (NEXBUF[1] == 0x00) && (NEXBUF[2] == 0x00)) break;
 
       case NEXTION_CMD_TOUCH_EVENT:
         if (receipt()) {
           nextionCallback *item = callbacks;
           while (item) {
-            if ((item->touch.page == __buffer__[1]) && (item->touch.id == __buffer__[2]) && (item->touch.event == __buffer__[3]) && (__buffer__[7] = (bool)item->pointer) && __length__++) {
+            if ((item->touch.page == NEXBUF[1]) && (item->touch.id == NEXBUF[2]) && (item->touch.event == NEXBUF[3]) && (NEXBUF[7] = (bool)item->pointer)) {
+              NEXBUFLEN++;
               item->pointer();
               break;
             }
@@ -131,7 +138,7 @@ uint8_t INextion::listen() {
 
       default: return NEXTION_CMD_UNKNOW_MESSAGE;
     }
-    return __buffer__[0];
+    return NEXBUF[0];
   }
   return 0;
 }

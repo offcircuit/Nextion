@@ -10,7 +10,6 @@ INextion	KEYWORD1
 Nextion	KEYWORD1
 
 nextionComponent	KEYWORD1
-nextionEvent	KEYWORD1
 nextionTouch	KEYWORD1
 
 ##################################################
@@ -22,7 +21,7 @@ page	KEYWORD1
 event	KEYWORD2
 
 ##################################################
-# Methods				(KEYWORD2)
+# Methods				(KEYWORD3)
 ##################################################
 
 begin	KEYWORD2
@@ -32,7 +31,7 @@ event	KEYWORD2
 listen	KEYWORD2
 transmit	KEYWORD2
 receipt	KEYWORD2
-property	KEYWORD2
+read	KEYWORD2
 wave	KEYWORD2
 
 ##################################################
@@ -41,8 +40,6 @@ wave	KEYWORD2
 
 NEXTION_EVENT_RELEASE	LITERAL1
 NEXTION_EVENT_PRESS	LITERAL1
-NEXTION_CMD_INVALID_INSTRUCTION	LITERAL1
-NEXTION_CMD_INSTRUCTION_SUCESSFUL	LITERAL1
 NEXTION_CMD_STARTUP	LITERAL1
 NEXTION_CMD_SERIAL_BUFFER_OVERFLOW	LITERAL1
 NEXTION_CMD_TOUCH_EVENT	LITERAL1
@@ -62,6 +59,6 @@ NEXTION_CMD_UNKNOW_MESSAGE	LITERAL1
 # Built-in variables			(LITERAL2)
 ##################################################
 
-__buffer__	LITERAL1
-__length__	LITERAL1
+NEXBUF	LITERAL1
+NEXBUFLEN	LITERAL1
 
