@@ -5,27 +5,28 @@ uint8_t NEXBUFLEN;
 
 INextion::INextion(uint8_t rx, uint8_t tx) {
   _serial = new SoftwareSerial(rx, tx);
-  _serial->begin(9600);
-};
+}
 
 bool INextion::begin() {
-  for (uint8_t i = 0; i < 7 ; i++) {
-    _serial->begin(_baud[6 - i]);
-    if (transmit("bkcmd=3"))return true;
+  for (uint8_t i = 7; i > 0;) {
+    _serial->begin(_baud[--i] * 2400UL);
+    if (transmit("bkcmd=3")) return true;
   }
   return false;
 }
 
 bool INextion::baud(uint32_t baud) {
-  if (transmit("bauds=" + String(baud))) _serial->begin(baud);
-  return NEXBUF[0];
+  for (uint8_t i = 7; i > 0;) {
+    if ((baud == (_baud[--i] * 2400UL)) && transmit("bauds=" + String(baud))) {
+      _serial->begin(baud);
+      return NEXBUF[0];
+    }
+  }
+  return false;
 }
 
 bool INextion::reset() {
-  if (transmit("rest")) {
-    for (uint8_t i = 0; i < NEXTION_SERIAL_SIZE;) NEXBUF[i++] = 0;
-    return true;
-  }
+  if (transmit("rest") && (NEXBUF[0] = 0) && (NEXBUF[1] = 0)) return true;
 }
 
 bool INextion::wait() {
@@ -45,6 +46,11 @@ bool INextion::receipt() {
   do if (_serial->available()) NEXBUF[NEXBUFLEN++] = _serial->read();
   while (cycle-- && ((NEXBUFLEN < 4) || ((NEXBUF[NEXBUFLEN - 1] & NEXBUF[NEXBUFLEN - 2] & NEXBUF[NEXBUFLEN - 3]) != 0xFF)));
   return cycle;
+}
+
+int16_t INextion::page() {
+  if (transmit("sendme") && (NEXBUF[0] == NEXTION_CMD_CURRENT_PAGE)) return NEXBUF[1];
+  return -1;
 }
 
 String INextion::read(String attribute) {
@@ -68,10 +74,9 @@ String INextion::read(String attribute) {
 uint8_t INextion::wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length) {
   if (transmit("addt " + String(id) + "," + String(channel) + "," + String(length)) && (NEXBUF[0] == NEXTION_CMD_TRANSPARENT_DATA_READY)) {
     for (size_t i = 0; i < length;) _serial->write(data[i++]);
-    while (!_serial->available());
-    if ((NEXBUF[0] = _serial->read()) && (receipt())) return NEXBUF[0];
+    if (wait() && (NEXBUF[0] = _serial->read()) && (receipt())) return NEXBUF[0];
   }
-  return NEXBUF[0];
+  return 0;
 }
 
 INextion::nextionCallback *INextion::callback(nextionTouch touch, nextionPointer pointer) {
@@ -83,10 +88,10 @@ INextion::nextionCallback *INextion::callback(nextionTouch touch, nextionPointer
 }
 
 void INextion::detach(nextionTouch touch) {
-  if (callbacks) {
-    nextionCallback *item = callbacks, *preview;
+  if (_callbacks) {
+    nextionCallback *item = _callbacks, *preview;
     do if ((item->touch.page == touch.page) && (item->touch.id == touch.id) && (item->touch.event == touch.event)) {
-        if (item == callbacks) callbacks = callbacks->next;
+        if (item == _callbacks) _callbacks = _callbacks->next;
         else preview->next = ((item->next) ? item->next : NULL);
         return;
       }
@@ -99,8 +104,8 @@ void INextion::detach(nextionComponent component, bool event) {
 }
 
 void INextion::event(nextionTouch touch, nextionPointer pointer) {
-  if (callbacks) {
-    nextionCallback *item = callbacks;
+  if (_callbacks) {
+    nextionCallback *item = _callbacks;
 
     do if ((item->touch.page == touch.page) && (item->touch.id == touch.id) && (item->touch.event == touch.event)) {
         item->pointer = pointer;
@@ -109,7 +114,7 @@ void INextion::event(nextionTouch touch, nextionPointer pointer) {
     while (item->next && (item = item->next));
     item->next = callback(touch, pointer);
 
-  } else callbacks = callback(touch, pointer);
+  } else _callbacks = callback(touch, pointer);
 }
 
 void INextion::event(nextionComponent component, bool event, nextionPointer pointer) {
@@ -125,7 +130,7 @@ uint8_t INextion::listen() {
 
       case NEXTION_CMD_TOUCH_EVENT:
         if (receipt()) {
-          nextionCallback *item = callbacks;
+          nextionCallback *item = _callbacks;
           while (item) {
             if ((item->touch.page == NEXBUF[1]) && (item->touch.id == NEXBUF[2]) && (item->touch.event == NEXBUF[3]) && (NEXBUF[7] = (bool)item->pointer)) {
               NEXBUFLEN++;

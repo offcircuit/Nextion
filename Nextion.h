@@ -5,12 +5,9 @@
 #define NEXTION_H
 
 #include "SoftwareSerial.h"
-#include "Arduino.h"
 
-#define U(i)({String(i + char(0xFF) + char(0xFF) + char(0xFF));})
-
-#define NEXTION_SERIAL_SIZE 255
-#define NEXTION_SERIAL_CYCLES 400
+#define NEXTION_SERIAL_SIZE 1024
+#define NEXTION_SERIAL_CYCLES 255
 
 #define  NEXTION_EVENT_RELEASE 0
 #define  NEXTION_EVENT_PRESS 1
@@ -45,8 +42,10 @@ extern uint8_t NEXBUFLEN;
 
 class INextion {
   private:
-    const uint32_t _baud[7] = {2400, 4800, 9600, 19200, 38400, 57600, 115200};
+    const uint8_t _baud[7] = {1, 2, 4, 8, 16, 24, 48};
 
+    bool wait();
+    
   protected:
     typedef void (*nextionPointer) ();
 
@@ -57,20 +56,21 @@ class INextion {
     };
 
     SoftwareSerial *_serial;
-    nextionCallback *callbacks;
+    nextionCallback *_callbacks;
 
     nextionCallback *callback(nextionTouch touch, nextionPointer pointer);
-    bool wait();
 
   public:
     INextion(uint8_t rx, uint8_t tx);
+    
     bool begin();
     bool baud(uint32_t baud);
     bool reset();
 
-    bool receipt();
     uint8_t transmit(String instruction);
+    bool receipt();
 
+    int16_t page();
     String read(String attribute);
     uint8_t wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length);
 
@@ -85,9 +85,8 @@ class Nextion: public INextion {
   public:
     Nextion(uint8_t rx, uint8_t tx): INextion(rx, tx) {};
 
-    int16_t page() {
-      if (transmit("sendme") && (NEXBUF[0] == NEXTION_CMD_CURRENT_PAGE)) return NEXBUF[1];
-      return -1;
+    int16_t page()  {
+      return INextion::page();
     }
 
     uint8_t page(uint8_t page) {
