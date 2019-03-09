@@ -5,9 +5,12 @@
 #define NEXTION_H
 
 #include "SoftwareSerial.h"
+#include "Arduino.h"
 
 #define NEXTION_SERIAL_SIZE 9
 #define NEXTION_SERIAL_CYCLES 255
+#define NEXTION_SERIAL_DELAY 50
+// higher as baud raise
 
 #define  NEXTION_EVENT_RELEASE 0
 #define  NEXTION_EVENT_PRESS 1
@@ -44,7 +47,7 @@ class INextion {
   private:
     bool compose(String instruction);
     bool wait();
-    bool receipt();
+    bool response();
 
   protected:
     typedef void (*nextionPointer) ();
@@ -63,7 +66,7 @@ class INextion {
   public:
     INextion(uint8_t rx, uint8_t tx);
 
-    bool begin(uint32_t speed = 0);
+    uint32_t begin(uint32_t speed = 0);
     bool reset();
 
     uint8_t transmit(String instruction);
@@ -72,10 +75,9 @@ class INextion {
     int16_t page();
     uint8_t wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length);
 
+
     void detach(nextionTouch touch);
-    void detach(nextionComponent component, bool event);
     void event(nextionTouch touch, nextionPointer pointer);
-    void event(nextionComponent component, bool event, nextionPointer pointer);
     uint8_t listen();
 };
 
@@ -83,52 +85,12 @@ class Nextion: public INextion {
   public:
     Nextion(uint8_t rx, uint8_t tx): INextion(rx, tx) {};
 
-    int16_t page()  {
-      return INextion::page();
-    }
-
-    uint8_t page(uint8_t page) {
-      return transmit("page " + String(page));
+    uint8_t circle(uint16_t x, uint16_t y, uint16_t r, uint16_t c) {
+      return transmit("cir " + String(x) + "," + String(y) + "," + String(r) + "," + String(c));
     }
 
     uint8_t click(uint8_t id, bool event) {
       return transmit("click " + String(id) + "," + String(event));
-    }
-
-    uint8_t hide(uint8_t id) {
-      return transmit("vis " + String(id) + ",0");
-    }
-
-    uint8_t show(uint8_t id) {
-      return transmit("vis " + String(id) + ",1");
-    }
-
-    uint8_t disable(uint8_t id) {
-      return transmit("tsw " + String(id) + ",0");
-    }
-
-    uint8_t enable(uint8_t id) {
-      return transmit("tsw " + String(id) + ",1");
-    }
-
-    uint8_t wave(uint8_t id, uint8_t channel) {
-      return transmit("cle " + String(id) + "," + String(channel));
-    }
-
-    uint8_t wave(uint8_t id, uint8_t channel, uint8_t data) {
-      return transmit("add " + String(id) + "," + String(channel) + "," + String(data));
-    }
-
-    uint8_t wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length) {
-      return INextion::wave(id, channel, *data, length);
-    }
-
-    uint8_t clear(uint16_t c = 0xFFFFFF) {
-      return transmit("cls " + String(c));
-    }
-
-    uint8_t picture(uint16_t x, uint16_t y, uint8_t resource) {
-      return transmit("pic " + String(x) + "," + String(y) + "," + String(resource));
     }
 
     uint8_t crop(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t resource) {
@@ -139,30 +101,87 @@ class Nextion: public INextion {
       return transmit("xpic " + String(dx) + "," + String(dy) + "," + String(w) + "," + String(h) + "," + String(sx) + "," + String(sy) + "," + String(resource));
     }
 
-    uint8_t text(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t font, uint16_t foreground, uint16_t background, uint8_t alignX, uint8_t alignY, uint8_t fill, String text) {
-      return transmit("xstr " + String(x) + "," + String(y) + "," + String(w) + "," + String(h) + "," +
-                      String(font) + "," + String(foreground) + "," + String(background) + "," + String(alignX) + "," + String(alignY) + "," + String(fill) + "," + text );
+    void detach(nextionTouch touch) {
+      INextion::detach(touch);
     }
 
-    uint8_t fill(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t c) {
+    void detach(nextionComponent component, bool event) {
+      INextion::detach({component.page, component.id, event});
+    }
+
+    uint8_t disable(uint8_t id) {
+      return transmit("tsw " + String(id) + ",0");
+    }
+
+    uint8_t enable(uint8_t id) {
+      return transmit("tsw " + String(id) + ",1");
+    }
+
+    uint8_t erase(uint16_t c = 0xFFFFFF) {
+      return transmit("cls " + String(c));
+    }
+
+    void event(nextionTouch touch, nextionPointer pointer) {
+      INextion::event(touch, pointer);
+    }
+
+    void event(nextionComponent component, bool event, nextionPointer pointer) {
+      INextion::event({component.page, component.id, event}, pointer);
+    }
+
+    uint8_t fillCicle(uint16_t x, uint16_t y, uint16_t r, uint16_t c) {
+      return transmit("cirs " + String(x) + "," + String(y) + "," + String(r) + "," + String(c));
+    }
+
+    uint8_t fillRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t c) {
       return transmit("fill " + String(x) + "," + String(y) + "," + String(w) + "," + String(h) + "," + String(c));
+    }
+
+    uint8_t hide(uint8_t id) {
+      return transmit("vis " + String(id) + ",0");
     }
 
     uint8_t line(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t c) {
       return transmit("line " + String(x1) + "," + String(y1) + "," + String(x2) + "," + String(y2) + "," + String(c));
     }
 
+    int16_t page()  {
+      return INextion::page();
+    }
+
+    uint8_t page(uint8_t page) {
+      return transmit("page " + String(page));
+    }
+
+    uint8_t picture(uint16_t x, uint16_t y, uint8_t resource) {
+      return transmit("pic " + String(x) + "," + String(y) + "," + String(resource));
+    }
+
     uint8_t rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t c) {
       return transmit("draw " + String(x1) + "," + String(y1) + "," + String(x2) + "," + String(y2) + "," + String(c));
     }
 
-    uint8_t circle(uint16_t x, uint16_t y, uint16_t r, uint16_t c) {
-      return transmit("cir " + String(x) + "," + String(y) + "," + String(r) + "," + String(c));
+    uint8_t show(uint8_t id) {
+      return transmit("vis " + String(id) + ",1");
     }
 
-    uint8_t disk(uint16_t x, uint16_t y, uint16_t r, uint16_t c) {
-      return transmit("cirs " + String(x) + "," + String(y) + "," + String(r) + "," + String(c));
+    uint8_t text(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t font, uint16_t foreground, uint16_t background, uint8_t alignX, uint8_t alignY, uint8_t fill, String text) {
+      return transmit("xstr " + String(x) + "," + String(y) + "," + String(w) + "," + String(h) + "," +
+                      String(font) + "," + String(foreground) + "," + String(background) + "," + String(alignX) + "," + String(alignY) + "," + String(fill) + "," + text );
     }
+
+    uint8_t wave(uint8_t id, uint8_t channel) {
+      return transmit("cle " + String(id) + "," + String(channel));
+    }
+
+    uint8_t wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length) {
+      return INextion::wave(id, channel, *data, length);
+    }
+
+    uint8_t wave(uint8_t id, uint8_t channel, uint8_t data) {
+      return transmit("add " + String(id) + "," + String(channel) + "," + String(data));
+    }
+
 };
 
 
