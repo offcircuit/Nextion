@@ -8,25 +8,31 @@ INextion::INextion(uint8_t rx, uint8_t tx) {
 }
 
 bool INextion::begin() {
+  const uint8_t baud[7] = {1, 2, 4, 8, 16, 24, 48};
   for (uint8_t i = 7; i > 0;) {
-    _serial->begin(_baud[--i] * 2400UL);
+    _serial->begin(baud[--i] * 2400UL);
     if (transmit("bkcmd=3")) return true;
   }
   return false;
 }
 
-bool INextion::baud(uint32_t baud) {
-  for (uint8_t i = 7; i > 0;) {
-    if ((baud == (_baud[--i] * 2400UL)) && transmit("bauds=" + String(baud))) {
-      _serial->begin(baud);
+bool INextion::baud(uint32_t speed) {
+  const uint8_t baud[7] = {1, 2, 4, 8, 16, 24, 48};
+  for (uint8_t i = 7; i > 0;)
+    if ((speed == (baud[--i] * 2400UL)) && transmit("bauds=" + String(speed))) {
+      _serial->begin(speed);
       return NEXBUF[0];
     }
-  }
   return false;
 }
 
 bool INextion::reset() {
-  if (transmit("rest") && (NEXBUF[0] = 0) && (NEXBUF[1] = 0)) return true;
+  return (transmit("rest") && (NEXBUF[0] = 0) && (NEXBUF[1] = 0));
+}
+
+bool INextion::compose(String instruction) {
+  while (_serial->available()) _serial->read();
+  return (_serial->print(instruction + char(0xFF) + char(0xFF) + char(0xFF)) && wait());
 }
 
 bool INextion::wait() {
@@ -36,16 +42,36 @@ bool INextion::wait() {
 }
 
 uint8_t INextion::transmit(String instruction) {
-  if (_serial->print(instruction + char(0xFF) + char(0xFF) + char(0xFF)) &&  wait() && (NEXBUF[0] = _serial->read()) && receipt()) return NEXBUF[0];
+  if (compose(instruction) && (NEXBUF[0] = _serial->read()) && receipt()) return NEXBUF[0];
   return 0;
 }
 
 bool INextion::receipt() {
-  int16_t cycle = NEXTION_SERIAL_CYCLES;
+  uint8_t cycle = NEXTION_SERIAL_CYCLES;
   NEXBUFLEN = 1;
   do if (_serial->available()) NEXBUF[NEXBUFLEN++] = _serial->read();
-  while (cycle-- && ((NEXBUFLEN < 4) || ((NEXBUF[NEXBUFLEN - 1] & NEXBUF[NEXBUFLEN - 2] & NEXBUF[NEXBUFLEN - 3]) != 0xFF)));
+  while (cycle-- && (NEXBUFLEN < 4) || ((NEXBUF[NEXBUFLEN - 1] & NEXBUF[NEXBUFLEN - 2] & NEXBUF[NEXBUFLEN - 3]) != 0xFF));
   return cycle;
+}
+
+String INextion::read(String attribute) {
+  if (compose("get " + attribute) && (NEXBUF[0] = _serial->read()))
+    switch (NEXBUF[0]) {
+
+      case  NEXTION_CMD_NUMERIC_DATA_ENCLOSED:
+        if (receipt()) return String((uint32_t)NEXBUF[4] << 24 | (uint32_t)NEXBUF[3] << 16 | (uint32_t)NEXBUF[2] << 8 | NEXBUF[1]);
+
+      case NEXTION_CMD_STRING_DATA_ENCLOSED:
+        uint8_t cycle = NEXTION_SERIAL_CYCLES;
+        String string = "";
+        NEXBUFLEN = 0;
+        do if (_serial->available()) {
+            string += char(_serial->read());
+            NEXBUFLEN++;
+          } while (cycle-- && ((NEXBUFLEN < 4) || ((string[NEXBUFLEN - 1] & string[NEXBUFLEN - 2] & string[NEXBUFLEN - 3]) != 0xFF)));
+        if (cycle) return string.substring(0, NEXBUFLEN - 3);
+    }
+  return NEXBUF[0];
 }
 
 int16_t INextion::page() {
@@ -53,28 +79,10 @@ int16_t INextion::page() {
   return -1;
 }
 
-String INextion::read(String attribute) {
-  if (transmit("get " + attribute)) {
-    switch (NEXBUF[0]) {
-
-      case  NEXTION_CMD_NUMERIC_DATA_ENCLOSED:
-        return String((uint32_t)NEXBUF[4] << 24 | (uint32_t)NEXBUF[3] << 16 | (uint32_t)NEXBUF[2] << 8 | NEXBUF[1]);
-        break;
-
-      case NEXTION_CMD_STRING_DATA_ENCLOSED:
-        String s = "";
-        for (uint8_t i = 1; i < NEXBUFLEN - 3; s += String(char(NEXBUF[i++])));
-        return s;
-        break;
-    }
-  }
-  return NEXBUF[0];
-}
-
 uint8_t INextion::wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length) {
   if (transmit("addt " + String(id) + "," + String(channel) + "," + String(length)) && (NEXBUF[0] == NEXTION_CMD_TRANSPARENT_DATA_READY)) {
     for (size_t i = 0; i < length;) _serial->write(data[i++]);
-    if (wait() && (NEXBUF[0] = _serial->read()) && (receipt())) return NEXBUF[0];
+    if (wait() && (NEXBUF[0] = _serial->read()) && receipt()) return NEXBUF[0];
   }
   return 0;
 }
@@ -94,8 +102,7 @@ void INextion::detach(nextionTouch touch) {
         if (item == _callbacks) _callbacks = _callbacks->next;
         else preview->next = ((item->next) ? item->next : NULL);
         return;
-      }
-    while (item->next && (preview = item) && (item = item->next));
+      } while (item->next && (preview = item) && (item = item->next));
   }
 }
 

@@ -1,8 +1,6 @@
 #include "Nextion.h"
 
 Nextion nextion(10, 11);
-nextionComponent bt {1, 1};
-nextionTouch bt2 {1, 2, NEXTION_EVENT_RELEASE};
 
 void setup() {
   // put your setup code here, to run once:
@@ -12,8 +10,26 @@ void setup() {
   Serial.println(nextion.begin());
   Serial.println("------------------------------------------------------- ");
 
-  nextion.event(bt, NEXTION_EVENT_RELEASE, cal);
-  nextion.event(bt2, clo);
+  Serial.println("transmit");
+  
+  Serial.println(nextion.transmit("tDate.txt=\"56etre801\""), HEX);
+
+  Serial.println("read");
+  Serial.println(nextion.read("tDate.txt"));
+  Serial.println("------------------------------------------------------- ");
+ /*     for (uint8_t i = 1; i < NEXBUFLEN; i++) {
+      Serial.print("  ");
+      Serial.print(i);
+      Serial.print("  ");
+      Serial.print((uint8_t)NEXBUF[i], DEC);
+      Serial.print("  (");
+      Serial.print(char(NEXBUF[i]));
+      Serial.println(")  ");
+    }*/
+
+
+  nextion.event({1, 1}, NEXTION_EVENT_RELEASE, cal);
+  nextion.event({1, 2, NEXTION_EVENT_RELEASE}, clo);
   nextion.event({2, 2, NEXTION_EVENT_RELEASE}, two);
   nextion.event({2, 3, NEXTION_EVENT_RELEASE}, three);
   nextion.event({2, 7, NEXTION_EVENT_RELEASE}, seven);

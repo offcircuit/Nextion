@@ -6,7 +6,7 @@
 
 #include "SoftwareSerial.h"
 
-#define NEXTION_SERIAL_SIZE 1024
+#define NEXTION_SERIAL_SIZE 9
 #define NEXTION_SERIAL_CYCLES 255
 
 #define  NEXTION_EVENT_RELEASE 0
@@ -42,10 +42,9 @@ extern uint8_t NEXBUFLEN;
 
 class INextion {
   private:
-    const uint8_t _baud[7] = {1, 2, 4, 8, 16, 24, 48};
-
+    bool compose(String instruction);
     bool wait();
-    
+
   protected:
     typedef void (*nextionPointer) ();
 
@@ -62,16 +61,16 @@ class INextion {
 
   public:
     INextion(uint8_t rx, uint8_t tx);
-    
+
     bool begin();
-    bool baud(uint32_t baud);
+    bool baud(uint32_t speed);
     bool reset();
 
     uint8_t transmit(String instruction);
     bool receipt();
 
-    int16_t page();
     String read(String attribute);
+    int16_t page();
     uint8_t wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length);
 
     void detach(nextionTouch touch);
@@ -166,6 +165,7 @@ class Nextion: public INextion {
       return transmit("cirs " + String(x) + "," + String(y) + "," + String(r) + "," + String(c));
     }
 };
+
 
 #endif
 #endif
