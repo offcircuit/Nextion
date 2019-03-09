@@ -7,7 +7,7 @@ void setup() {
   Serial.begin(9600);
   
   Serial.print("Start .... ");
-  Serial.println(nextion.begin());
+  Serial.println(nextion.begin(9600));
   Serial.println("------------------------------------------------------- ");
 
   Serial.println("transmit");

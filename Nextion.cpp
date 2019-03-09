@@ -7,22 +7,19 @@ INextion::INextion(uint8_t rx, uint8_t tx) {
   _serial = new SoftwareSerial(rx, tx);
 }
 
-bool INextion::begin() {
+bool INextion::begin(uint32_t speed = 0) {
   const uint8_t baud[7] = {1, 2, 4, 8, 16, 24, 48};
+  
+  if (speed) for (uint8_t i = 7; i > 0;)
+      if ((speed == (baud[--i] * 2400UL)) && transmit("baud=" + String(speed))) {
+        _serial->begin(speed);
+        return transmit("bkcmd=3");
+      }
+      
   for (uint8_t i = 7; i > 0;) {
     _serial->begin(baud[--i] * 2400UL);
     if (transmit("bkcmd=3")) return true;
   }
-  return false;
-}
-
-bool INextion::baud(uint32_t speed) {
-  const uint8_t baud[7] = {1, 2, 4, 8, 16, 24, 48};
-  for (uint8_t i = 7; i > 0;)
-    if ((speed == (baud[--i] * 2400UL)) && transmit("bauds=" + String(speed))) {
-      _serial->begin(speed);
-      return NEXBUF[0];
-    }
   return false;
 }
 
@@ -41,17 +38,17 @@ bool INextion::wait() {
   return cycle;
 }
 
-uint8_t INextion::transmit(String instruction) {
-  if (compose(instruction) && (NEXBUF[0] = _serial->read()) && receipt()) return NEXBUF[0];
-  return 0;
-}
-
 bool INextion::receipt() {
   uint8_t cycle = NEXTION_SERIAL_CYCLES;
   NEXBUFLEN = 1;
   do if (_serial->available()) NEXBUF[NEXBUFLEN++] = _serial->read();
   while (cycle-- && (NEXBUFLEN < 4) || ((NEXBUF[NEXBUFLEN - 1] & NEXBUF[NEXBUFLEN - 2] & NEXBUF[NEXBUFLEN - 3]) != 0xFF));
   return cycle;
+}
+
+uint8_t INextion::transmit(String instruction) {
+  if (compose(instruction) && (NEXBUF[0] = _serial->read()) && receipt()) return NEXBUF[0];
+  return 0;
 }
 
 String INextion::read(String attribute) {
@@ -65,10 +62,8 @@ String INextion::read(String attribute) {
         uint8_t cycle = NEXTION_SERIAL_CYCLES;
         String string = "";
         NEXBUFLEN = 0;
-        do if (_serial->available()) {
-            string += char(_serial->read());
-            NEXBUFLEN++;
-          } while (cycle-- && ((NEXBUFLEN < 4) || ((string[NEXBUFLEN - 1] & string[NEXBUFLEN - 2] & string[NEXBUFLEN - 3]) != 0xFF)));
+        do if (_serial->available() && (string += char(_serial->read()))) NEXBUFLEN++;
+        while (cycle-- && ((NEXBUFLEN < 4) || ((string[NEXBUFLEN - 1] & string[NEXBUFLEN - 2] & string[NEXBUFLEN - 3]) != 0xFF)));
         if (cycle) return string.substring(0, NEXBUFLEN - 3);
     }
   return NEXBUF[0];

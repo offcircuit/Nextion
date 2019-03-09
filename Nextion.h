@@ -44,6 +44,7 @@ class INextion {
   private:
     bool compose(String instruction);
     bool wait();
+    bool receipt();
 
   protected:
     typedef void (*nextionPointer) ();
@@ -62,12 +63,10 @@ class INextion {
   public:
     INextion(uint8_t rx, uint8_t tx);
 
-    bool begin();
-    bool baud(uint32_t speed);
+    bool begin(uint32_t speed = 0);
     bool reset();
 
     uint8_t transmit(String instruction);
-    bool receipt();
 
     String read(String attribute);
     int16_t page();
