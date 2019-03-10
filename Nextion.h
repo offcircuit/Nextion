@@ -1,5 +1,5 @@
-#ifndef INextion_H
-#define INextion_H
+#ifndef INEXTION_H
+#define INEXTION_H
 
 #ifndef NEXTION_H
 #define NEXTION_H
@@ -48,7 +48,7 @@ class INextion {
     uint32_t _value;
 
     SoftwareSerial *_serial;
-    
+
     bool response();
     bool wait();
 
@@ -66,7 +66,7 @@ class INextion {
 };
 
 class Nextion: public INextion {
-  protected:
+  private:
     typedef void (*nextionPointer) ();
 
     struct nextionCallback {
@@ -75,8 +75,14 @@ class Nextion: public INextion {
       nextionPointer pointer;
     };
 
-  private:
     nextionCallback *_callbacks;
+    nextionCallback *callback(nextionTouch touch, nextionPointer pointer) {
+      nextionCallback *item = new nextionCallback;
+      item->next = NULL;
+      item->pointer = pointer;
+      item->touch = touch;
+      return item;
+    }
 
   public:
     Nextion(uint8_t rx, uint8_t tx): INextion(rx, tx) {};
@@ -98,12 +104,12 @@ class Nextion: public INextion {
       attach({component.page, component.id, event}, pointer);
     }
 
-    uint8_t autowakeup(bool state) {
-      return transmit("thup=" + String(state));
-    }
-
     uint8_t circle(uint16_t x, uint16_t y, uint16_t r, uint16_t c) {
       return transmit("cir " + String(x) + "," + String(y) + "," + String(r) + "," + String(c));
+    }
+
+    uint8_t clear(uint16_t c = 0xFFFFFF) {
+      return transmit("cls " + String(c));
     }
 
     uint8_t click(uint8_t id, bool event) {
@@ -141,8 +147,12 @@ class Nextion: public INextion {
       return transmit("tsw " + String(id) + ",1");
     }
 
-    uint8_t erase(uint16_t c = 0xFFFFFF) {
-      return transmit("cls " + String(c));
+    uint8_t erase(uint8_t id) {
+      return transmit("cle " + String(id) + ",255");
+    }
+
+    uint8_t erase(uint8_t id, uint8_t channel) {
+      return transmit("cle " + String(id) + "," + String(channel));
     }
 
     uint8_t fillCircle(uint16_t x, uint16_t y, uint16_t r, uint16_t c) {
@@ -163,7 +173,7 @@ class Nextion: public INextion {
 
     uint8_t listen() {
       if (_serial->available() > 3) {
-        switch ((_command = _serial->read())) {
+        switch (_command = _serial->read()) {
 
           case NEXTION_CMD_STARTUP:
             if (response() && (_buffer[0] == 0x00) && (_buffer[1] == 0x00)) break;
@@ -171,8 +181,8 @@ class Nextion: public INextion {
           case NEXTION_CMD_TOUCH_COORDINATE_AWAKE:
           case NEXTION_CMD_TOUCH_COORDINATE_SLEEP:
             if (response()) {
-              _x = ((uint16_t)_buffer[0] << 8 | _buffer[1]);
-              _y = ((uint16_t)_buffer[2] << 8 | _buffer[3]);
+              _x = (((uint16_t)_buffer[0] << 8) | _buffer[1]);
+              _y = (((uint16_t)_buffer[2] << 8) | _buffer[3]);
               _event = _buffer[4];
               break;
             }
@@ -182,6 +192,7 @@ class Nextion: public INextion {
               _page = _buffer[0];
               _id = _buffer[1];
               _event = _buffer[2];
+              _pointer = false;
 
               nextionCallback *item = _callbacks;
               while (item) {
@@ -191,7 +202,6 @@ class Nextion: public INextion {
                 }
                 item = item->next;
               }
-              _pointer = false;
               break;
             }
 
@@ -207,14 +217,6 @@ class Nextion: public INextion {
         return _command;
       }
       return 0;
-    }
-
-    nextionCallback *callback(nextionTouch touch, nextionPointer pointer) {
-      nextionCallback *item = new nextionCallback;
-      item->next = NULL;
-      item->pointer = pointer;
-      item->touch = touch;
-      return item;
     }
 
     int16_t page() {
@@ -239,7 +241,11 @@ class Nextion: public INextion {
     }
 
     String read(String attribute) {
-      if (transmit("get " + attribute)) return (_command == NEXTION_CMD_STRING_DATA_ENCLOSED ? _string : String(_value));
+      if (transmit("get " + attribute)) return ((_command == NEXTION_CMD_STRING_DATA_ENCLOSED) ? _string : String(_value));
+    }
+
+    uint8_t reply(bool state) {
+      return transmit("thup=" + String(state));
     }
 
     uint8_t show(uint8_t id) {
@@ -257,10 +263,6 @@ class Nextion: public INextion {
 
     uint8_t wakeup() {
       return transmit("sleep=0");
-    }
-
-    uint8_t wave(uint8_t id, uint8_t channel) {
-      return transmit("cle " + String(id) + "," + String(channel));
     }
 
     uint8_t wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length) {

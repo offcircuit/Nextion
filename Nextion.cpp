@@ -20,7 +20,6 @@ uint32_t INextion::begin(uint32_t speed = 0) {
         transmit("baud=" + String(baud[current] * 2400UL));
         break;
       }
-      
   return (baud[current] * 2400UL);
 }
 
@@ -35,13 +34,13 @@ bool INextion::response() {
   }
 
   do if (_serial->available()) _buffer[length++] = _serial->read();
-  while (cycle-- && (length < NEXTION_SERIAL_SIZE) && ((length < 4) || ((_buffer[length - 1] & _buffer[length - 2] & _buffer[length - 3]) != 0xFF)));
+  while (cycle-- && ((length < 4) || ((_buffer[length - 1] & _buffer[length - 2] & _buffer[length - 3]) != 0xFF)));
 
   if (cycle) {
-    if (_command == NEXTION_CMD_NUMERIC_DATA_ENCLOSED) _value = ((uint32_t)_buffer[3] << 24 | (uint32_t)_buffer[2] << 16 | (uint32_t)_buffer[1] << 8 | _buffer[0]);
+    if (_command == NEXTION_CMD_NUMERIC_DATA_ENCLOSED) _value = (((uint32_t)_buffer[3] << 24) | ((uint32_t)_buffer[2] << 16) | ((uint32_t)_buffer[1] << 8) | _buffer[0]);
     return true;
   }
-  return cycle;
+  return false;
 }
 
 bool INextion::wait() {

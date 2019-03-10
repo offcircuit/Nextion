@@ -11,7 +11,7 @@ void setup() {
   Serial.println("------------------------------------------------------- ");
   nextion.transmit("page 0");
   delay(10);
-  nextion.autowakeup(true);
+  nextion.reply(true);
   delay(10);
   Serial.println(nextion.transmit("bkcmd=3"), HEX);
   delay(10);
@@ -72,9 +72,9 @@ void loop() {
   uint8_t listen =  nextion.listen();
   if (listen) {
   if((nextion.command == NEXTION_CMD_TOUCH_COORDINATE_SLEEP) ||(nextion.command == NEXTION_CMD_TOUCH_COORDINATE_AWAKE) ) {
-       Serial.print("  X == ");
+       Serial.print("  X ==  ");
         Serial.print(nextion.x);
-        Serial.print(" Y ==");
+        Serial.print("  Y ==  ");
         Serial.println(nextion.y);    
   }
     Serial.println(" listen *************************************************************************");
