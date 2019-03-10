@@ -1,5 +1,5 @@
 ##################################################
-# Syntax Coloring Map For Nextion-library
+# Syntax Coloring Map For          Nextion-library
 ##################################################
 
 ##################################################
@@ -16,33 +16,55 @@ nextionTouch	KEYWORD1
 # Methods and Functions			(KEYWORD2)
 ##################################################
 
-id	KEYWORD1
-page	KEYWORD1
-event	KEYWORD2
+begin	KEYWORD2
+transmit	KEYWORD2
+
+attach	KEYWORD2
+circle	KEYWORD2
+clear	KEYWORD2
+click	KEYWORD2
+crop	KEYWORD2
+detach	KEYWORD2
+disable	KEYWORD2
+enable	KEYWORD2
+erase	KEYWORD2
+fillCircle	KEYWORD2
+fillRectangle	KEYWORD2
+hide	KEYWORD2
+line	KEYWORD2
+listen	KEYWORD2
+page	KEYWORD2
+picture	KEYWORD2
+rectangle	KEYWORD2
+reboot	KEYWORD2
+read	KEYWORD2
+reply	KEYWORD2
+show	KEYWORD2
+sleep	KEYWORD2
+text	KEYWORD2
+wakeup	KEYWORD2
+wave	KEYWORD2
 
 ##################################################
 # Methods				(KEYWORD3)
 ##################################################
 
-begin	KEYWORD2
-page	KEYWORD2
-detach	KEYWORD2
-event	KEYWORD2
-listen	KEYWORD2
-transmit	KEYWORD2
-receipt	KEYWORD2
-read	KEYWORD2
-wave	KEYWORD2
+
 
 ##################################################
 # Constants				(LITERAL1)
 ##################################################
 
+NEXTION_SERIAL_SIZE	LITERAL1
+NEXTION_SERIAL_CYCLES	LITERAL1
+
 NEXTION_EVENT_RELEASE	LITERAL1
 NEXTION_EVENT_PRESS	LITERAL1
+
 NEXTION_CMD_STARTUP	LITERAL1
 NEXTION_CMD_SERIAL_BUFFER_OVERFLOW	LITERAL1
 NEXTION_CMD_TOUCH_EVENT	LITERAL1
+NEXTION_CMD_CURRENT_PAGE	LITERAL1
 NEXTION_CMD_TOUCH_COORDINATE_AWAKE	LITERAL1
 NEXTION_CMD_TOUCH_COORDINATE_SLEEP	LITERAL1
 NEXTION_CMD_STRING_DATA_ENCLOSED	LITERAL1
@@ -59,6 +81,13 @@ NEXTION_CMD_UNKNOW_MESSAGE	LITERAL1
 # Built-in variables			(LITERAL2)
 ##################################################
 
-NEXBUF	LITERAL1
-NEXBUFLEN	LITERAL1
+event	LITERAL2
+pointer	LITERAL2
+string	LITERAL2
+command	LITERAL2
+page	LITERAL2
+id	LITERAL2
+x	LITERAL2
+y	LITERAL2
+value	LITERAL2
 
