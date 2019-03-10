@@ -36,13 +36,13 @@ bool INextion::compose(String instruction) {
 }
 
 bool INextion::wait() {
-  uint16_t cycle = NEXTION_SERIAL_CYCLES;
+  uint8_t cycle = NEXTION_SERIAL_CYCLES;
   while (--cycle && (!_serial->available()));
   return cycle;
 }
 
 bool INextion::response() {
-  uint16_t cycle = NEXTION_SERIAL_CYCLES;
+  uint8_t cycle = NEXTION_SERIAL_CYCLES;
   NEXBUFLEN = 1;
   do if (_serial->available()) NEXBUF[NEXBUFLEN++] = _serial->read();
   while (cycle-- && (NEXBUFLEN <= NEXTION_SERIAL_SIZE) && ((NEXBUFLEN < 4) || ((NEXBUF[NEXBUFLEN - 1] & NEXBUF[NEXBUFLEN - 2] & NEXBUF[NEXBUFLEN - 3]) != 0xFF)));
@@ -63,7 +63,7 @@ String INextion::read(String attribute) {
         if (response()) return String((uint32_t)NEXBUF[4] << 24 | (uint32_t)NEXBUF[3] << 16 | (uint32_t)NEXBUF[2] << 8 | NEXBUF[1]);
 
       case NEXTION_CMD_STRING_DATA_ENCLOSED:
-        uint16_t cycle = NEXTION_SERIAL_CYCLES;
+        uint8_t cycle = NEXTION_SERIAL_CYCLES;
         String string = "";
         NEXBUFLEN = 0;
         do if (_serial->available() && (string += (char)_serial->read())) NEXBUFLEN++;
