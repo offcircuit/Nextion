@@ -155,18 +155,3 @@ uint8_t INextion::listen() {
   }
   return 0;
 }
-
-
-void out() {
-  Serial.println("");
-  Serial.print(" len -> ");
-  Serial.println(NEXBUFLEN, HEX);
-  Serial.print(" cmd -> ");
-  Serial.println(NEXBUF[0], HEX);
-  for (uint8_t i = 1; i < NEXBUFLEN; i++) {
-    Serial.print("  ");
-    Serial.print(i);
-    Serial.print("  0x");
-    Serial.println((uint8_t)NEXBUF[i], HEX);
-  }
-}
