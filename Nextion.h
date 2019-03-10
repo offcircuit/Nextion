@@ -145,7 +145,7 @@ class Nextion: public INextion {
       return transmit("cls " + String(c));
     }
 
-    uint8_t fillCicle(uint16_t x, uint16_t y, uint16_t r, uint16_t c) {
+    uint8_t fillCircle(uint16_t x, uint16_t y, uint16_t r, uint16_t c) {
       return transmit("cirs " + String(x) + "," + String(y) + "," + String(r) + "," + String(c));
     }
 
