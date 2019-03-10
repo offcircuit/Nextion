@@ -20,7 +20,7 @@ uint32_t INextion::begin(uint32_t speed = 0) {
           _serial->begin(speed);
           return speed;
         }
-        _serial->begin(baud[current] * 2400UL);
+        transmit("baud=" + String(baud[current] * 2400UL));
         break;
       }
   return (baud[current] * 2400UL);
@@ -32,32 +32,26 @@ bool INextion::reset() {
 
 bool INextion::compose(String instruction) {
   while (_serial->available()) _serial->read();
-  return _serial->print((instruction + char(0xFF) + char(0xFF) + char(0xFF))) && wait();
+  return (_serial->print(instruction + char(0xFF) + char(0xFF) + char(0xFF)) && wait());
 }
 
 bool INextion::wait() {
-  uint8_t cycle = NEXTION_SERIAL_CYCLES;
-  while (--cycle && !_serial->available());
+  uint16_t cycle = NEXTION_SERIAL_CYCLES;
+  while (--cycle && (!_serial->available()));
   return cycle;
 }
 
 bool INextion::response() {
-  uint8_t cycle = NEXTION_SERIAL_CYCLES;
+  uint16_t cycle = NEXTION_SERIAL_CYCLES;
   NEXBUFLEN = 1;
   do if (_serial->available()) NEXBUF[NEXBUFLEN++] = _serial->read();
-  while (cycle-- && (NEXBUFLEN < NEXTION_SERIAL_SIZE) && ((NEXBUFLEN < 4) || ((NEXBUF[NEXBUFLEN - 1] & NEXBUF[NEXBUFLEN - 2] & NEXBUF[NEXBUFLEN - 3]) != 0xFF)));
+  while (cycle-- && (NEXBUFLEN <= NEXTION_SERIAL_SIZE) && ((NEXBUFLEN < 4) || ((NEXBUF[NEXBUFLEN - 1] & NEXBUF[NEXBUFLEN - 2] & NEXBUF[NEXBUFLEN - 3]) != 0xFF)));
   while (_serial->available()) _serial->read();
   return cycle;
 }
 
 uint8_t INextion::transmit(String instruction) {
-  if (compose(instruction) && (NEXBUF[0] = _serial->read()) && response()) {
-
-    delay(NEXTION_SERIAL_DELAY);
-
-    return NEXBUF[0];
-  }
-  delay(NEXTION_SERIAL_DELAY);
+  if (compose(instruction) && (NEXBUF[0] = _serial->read()) && response()) return NEXBUF[0];
   return 0;
 }
 
@@ -69,14 +63,10 @@ String INextion::read(String attribute) {
         if (response()) return String((uint32_t)NEXBUF[4] << 24 | (uint32_t)NEXBUF[3] << 16 | (uint32_t)NEXBUF[2] << 8 | NEXBUF[1]);
 
       case NEXTION_CMD_STRING_DATA_ENCLOSED:
-        uint8_t cycle = NEXTION_SERIAL_CYCLES;
+        uint16_t cycle = NEXTION_SERIAL_CYCLES;
         String string = "";
         NEXBUFLEN = 0;
-        do if (_serial->available()) {
-            string += (char)_serial->read();
-            NEXBUFLEN++;
-            delayMicroseconds(500);
-          }
+        do if (_serial->available() && (string += (char)_serial->read())) NEXBUFLEN++;
         while (cycle--  && ((NEXBUFLEN < 4) || ((string[NEXBUFLEN - 1] & string[NEXBUFLEN - 2] & string[NEXBUFLEN - 3]) != 0xFF)));
         if (cycle) return string.substring(0, NEXBUFLEN - 3);
     }
@@ -164,4 +154,19 @@ uint8_t INextion::listen() {
     return NEXBUF[0];
   }
   return 0;
+}
+
+
+void out() {
+  Serial.println("");
+  Serial.print(" len -> ");
+  Serial.println(NEXBUFLEN, HEX);
+  Serial.print(" cmd -> ");
+  Serial.println(NEXBUF[0], HEX);
+  for (uint8_t i = 1; i < NEXBUFLEN; i++) {
+    Serial.print("  ");
+    Serial.print(i);
+    Serial.print("  0x");
+    Serial.println((uint8_t)NEXBUF[i], HEX);
+  }
 }

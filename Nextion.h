@@ -9,8 +9,6 @@
 
 #define NEXTION_SERIAL_SIZE 9
 #define NEXTION_SERIAL_CYCLES 255
-#define NEXTION_SERIAL_DELAY 50
-// higher as baud raise
 
 #define  NEXTION_EVENT_RELEASE 0
 #define  NEXTION_EVENT_PRESS 1
@@ -42,6 +40,8 @@ struct nextionTouch {
 
 extern uint8_t NEXBUF[NEXTION_SERIAL_SIZE];
 extern uint8_t NEXBUFLEN;
+
+extern void out();
 
 class INextion {
   private:
