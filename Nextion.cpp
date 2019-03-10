@@ -29,12 +29,12 @@ bool INextion::response() {
 
   if (_command == NEXTION_CMD_STRING_DATA_ENCLOSED) {
     do if (_serial->available() && (_string += (char)_serial->read()) && length++) cycle = NEXTION_SERIAL_CYCLES;
-    while (cycle-- && ((length < 4) || ((_string[length - 1] & _string[length - 2] & _string[length - 3]) != 0xFF)));
+    while (cycle-- && ((length < 3) || ((_string[length - 1] & _string[length - 2] & _string[length - 3]) != 0xFF)));
     return (cycle && (_string = _string.substring(0, length - 3)));
   }
 
   do if (_serial->available()) _buffer[length++] = _serial->read();
-  while (cycle-- && ((length < 4) || ((_buffer[length - 1] & _buffer[length - 2] & _buffer[length - 3]) != 0xFF)));
+  while (cycle-- && ((length < 3) || ((_buffer[length - 1] & _buffer[length - 2] & _buffer[length - 3]) != 0xFF)));
 
   if (cycle) {
     if (_command == NEXTION_CMD_NUMERIC_DATA_ENCLOSED) _value = (((uint32_t)_buffer[3] << 24) | ((uint32_t)_buffer[2] << 16) | ((uint32_t)_buffer[1] << 8) | _buffer[0]);
