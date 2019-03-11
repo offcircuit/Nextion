@@ -7,16 +7,16 @@ void setup() {
   Serial.begin(9600);
 
   Serial.print("Start .... at baud ");
-  Serial.println(nextion.begin());
+  Serial.println(nextion.begin(57600));
   Serial.println("------------------------------------------------------- ");
   nextion.transmit("page 0");
-  delay(10);
+  delay(100);
   nextion.reply(true);
-  delay(10);
-  Serial.println(nextion.transmit("bkcmd=3"), HEX);
-  delay(10);
+  delay(100);
+/*  Serial.println(nextion.transmit("bkcmd=3"), HEX);
+  delay(100);
   Serial.println(nextion.transmit("sendxy=1"), HEX);
-  delay(10);
+  delay(100);
   Serial.println(nextion.transmit("tDate.txt=\"12345678901234567890\""), HEX);
   delay(100);
   Serial.println("------------------------------------------------------- ");
@@ -62,6 +62,8 @@ void seven() {
 void clo() {
   Serial.println("clock... ");
   nextion.reboot();
+  delay(1000);
+  nextion.reply(true);
 }
 
 void cal() {

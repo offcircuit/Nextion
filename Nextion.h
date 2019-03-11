@@ -1,7 +1,7 @@
-#ifndef INEXTION_H
-#define INEXTION_H
-
 #ifndef NEXTION_H
+#ifndef INEXTION_H
+
+#define INEXTION_H
 #define NEXTION_H
 
 #include "SoftwareSerial.h"
@@ -232,16 +232,16 @@ class Nextion: public INextion {
       return transmit("pic " + String(x) + "," + String(y) + "," + String(resource));
     }
 
-    uint8_t rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t c) {
-      return transmit("draw " + String(x1) + "," + String(y1) + "," + String(x2) + "," + String(y2) + "," + String(c));
+    String read(String attribute) {
+      if (transmit("get " + attribute)) return ((_command == NEXTION_CMD_STRING_DATA_ENCLOSED) ? _string : String(_value));
     }
-
+    
     bool reboot() {
       return transmit("rest");
     }
-
-    String read(String attribute) {
-      if (transmit("get " + attribute)) return ((_command == NEXTION_CMD_STRING_DATA_ENCLOSED) ? _string : String(_value));
+    
+    uint8_t rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t c) {
+      return transmit("draw " + String(x1) + "," + String(y1) + "," + String(x2) + "," + String(y2) + "," + String(c));
     }
 
     uint8_t reply(bool state) {

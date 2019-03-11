@@ -5,22 +5,18 @@ INextion::INextion(uint8_t rx, uint8_t tx) {
 }
 
 uint32_t INextion::begin(uint32_t speed = 0) {
-  const uint8_t baud[8] = {1, 2, 4, 8, 16, 24, 48, 0};
-  uint8_t current = 0;
+  const uint8_t rate[8] = {1, 2, 4, 8, 16, 24, 48, 0};
+  uint8_t baud = 0;
 
-  do _serial->begin(baud[current] * 2400UL);
-  while (!transmit("bkcmd=3") && (7 > ++current));
+  do _serial->begin(rate[baud] * 2400UL);
+  while (!transmit("connect") && (7 > ++baud));
 
-  if (speed && (speed != (baud[current] * 2400UL))) for (uint8_t i = 0; i < 7; i++)
-      if (speed == (baud[i] * 2400UL)) {
-        if (transmit("bauds=" + String(speed))) {
-          _serial->begin(speed);
-          return speed;
-        }
-        transmit("baud=" + String(baud[current] * 2400UL));
-        break;
-      }
-  return (baud[current] * 2400UL);
+  if (speed) {
+    transmit("bauds=" + String(speed));
+    _serial->begin(speed);
+    return speed;
+  }
+  return (rate[baud] * 2400UL);
 }
 
 bool INextion::response() {
