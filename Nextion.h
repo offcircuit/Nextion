@@ -26,7 +26,7 @@
 #define NEXTION_CMD_START_MICROSD_UPDATE                        0x89 // LISTEN
 #define NEXTION_CMD_TRANSPARENT_DATA_END                        0xFD // WAVE
 #define NEXTION_CMD_TRANSPARENT_DATA_READY                      0xFE // WAVE
-#define NEXTION_CMD_UNKNOW_MESSAGE                              0xFF // LISTEN
+#define NEXTION_CMD_UNKNOWN_MESSAGE                             0xFF // LISTEN
 
 struct nextionComponent {
   int8_t page, id;
@@ -212,7 +212,7 @@ class Nextion: public INextion {
           case NEXTION_CMD_START_MICROSD_UPDATE:
             if (response()) break;
 
-          default: return NEXTION_CMD_UNKNOW_MESSAGE;
+          default: return NEXTION_CMD_UNKNOWN_MESSAGE;
         }
         return _command;
       }

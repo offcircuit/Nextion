@@ -13,6 +13,7 @@ void setup() {
   delay(100);
   nextion.reply(true);
   delay(100);
+  nextion.transmit("bkcmd=3");
 /*  Serial.println(nextion.transmit("bkcmd=3"), HEX);
   delay(100);
   Serial.println(nextion.transmit("sendxy=1"), HEX);
