@@ -24,6 +24,7 @@ circle	KEYWORD2
 clear	KEYWORD2
 click	KEYWORD2
 crop	KEYWORD2
+current	KEYWORD2
 detach	KEYWORD2
 disable	KEYWORD2
 enable	KEYWORD2
@@ -33,11 +34,10 @@ fillRectangle	KEYWORD2
 hide	KEYWORD2
 line	KEYWORD2
 listen	KEYWORD2
-page	KEYWORD2
 picture	KEYWORD2
 rectangle	KEYWORD2
-reboot	KEYWORD2
 read	KEYWORD2
+reboot	KEYWORD2
 reply	KEYWORD2
 show	KEYWORD2
 sleep	KEYWORD2
