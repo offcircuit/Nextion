@@ -5,7 +5,6 @@
 #define NEXTION_H
 
 #include "SoftwareSerial.h"
-#include "Arduino.h"
 
 #define NEXTION_SERIAL_SIZE 9
 #define NEXTION_SERIAL_CYCLES 255
