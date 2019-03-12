@@ -5,6 +5,7 @@
 #define NEXTION_H
 
 #include "SoftwareSerial.h"
+#include "Arduino.h"
 
 #define NEXTION_SERIAL_SIZE 9
 #define NEXTION_SERIAL_CYCLES 255
@@ -124,6 +125,15 @@ class Nextion: public INextion {
       return transmit("xpic " + String(dx) + "," + String(dy) + "," + String(w) + "," + String(h) + "," + String(sx) + "," + String(sy) + "," + String(resource));
     }
 
+    int16_t current() {
+      if (transmit("sendme") && (command == NEXTION_CMD_CURRENT_PAGE)) return _buffer[0];
+      return -1;
+    }
+
+    uint8_t current(uint8_t page) {
+      return transmit("page " + String(page));
+    }
+
     void detach(nextionTouch touch) {
       if (_callbacks) {
         nextionCallback *item = _callbacks, *preview;
@@ -217,15 +227,6 @@ class Nextion: public INextion {
         return _command;
       }
       return 0;
-    }
-
-    int16_t page() {
-      if (transmit("sendme") && (command == NEXTION_CMD_CURRENT_PAGE)) return _page;
-      return -1;
-    }
-
-    uint8_t page(uint8_t page) {
-      return transmit("page " + String(page));
     }
 
     uint8_t picture(uint16_t x, uint16_t y, uint8_t resource) {
