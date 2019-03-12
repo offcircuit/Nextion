@@ -5,6 +5,7 @@
 #define NEXTION_H
 
 #include "SoftwareSerial.h"
+#include "Arduino.h"
 
 #define NEXTION_SERIAL_SIZE 9
 #define NEXTION_SERIAL_CYCLES 255
@@ -263,6 +264,10 @@ class Nextion: public INextion {
 
     uint8_t wakeup() {
       return transmit("sleep=0");
+    }
+
+    uint8_t wave(uint8_t id, uint8_t channel, uint8_t data) {
+      return transmit("add " + String(id) + "," + String(channel) + "," + String(data));
     }
 
     uint8_t wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length) {
