@@ -12,7 +12,7 @@ uint32_t INextion::begin(uint32_t speed = 0) {
   while (!transmit("connect") && (7 > ++baud));
 
   if (speed) {
-    transmit("bauds=" + String(speed));
+    transmit("baud=" + String(speed));
     _serial->begin(speed);
     return speed;
   }
