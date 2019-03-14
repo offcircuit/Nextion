@@ -11,20 +11,20 @@
 #define  NEXTION_EVENT_RELEASE 0
 #define  NEXTION_EVENT_PRESS 1
 
-#define NEXTION_CMD_STARTUP                                     0x00 // LISTEN
-#define NEXTION_CMD_SERIAL_BUFFER_OVERFLOW                      0x24 // LISTEN
-#define NEXTION_CMD_TOUCH_EVENT                                 0x65 // LISTEN
-#define NEXTION_CMD_CURRENT_PAGE                                0x66 // PAGE
-#define NEXTION_CMD_TOUCH_COORDINATE_AWAKE                      0x67 // LISTEN
-#define NEXTION_CMD_TOUCH_COORDINATE_SLEEP                      0x68 // LISTEN
-#define NEXTION_CMD_STRING_DATA_ENCLOSED                        0x70 // READ
-#define NEXTION_CMD_NUMERIC_DATA_ENCLOSED                       0x71 // READ
-#define NEXTION_CMD_AUTO_ENTER_SLEEP                            0x86 // LISTEN
-#define NEXTION_CMD_AUTO_ENTER_WAKEUP                           0x87 // LISTEN
-#define NEXTION_CMD_READY                                       0x88 // LISTEN
-#define NEXTION_CMD_START_MICROSD_UPDATE                        0x89 // LISTEN
-#define NEXTION_CMD_TRANSPARENT_DATA_END                        0xFD // WAVE
-#define NEXTION_CMD_TRANSPARENT_DATA_READY                      0xFE // WAVE
+#define NEXTION_CMD_STARTUP 0x00 // LISTEN
+#define NEXTION_CMD_SERIAL_BUFFER_OVERFLOW 0x24 // LISTEN
+#define NEXTION_CMD_TOUCH_EVENT 0x65 // LISTEN
+#define NEXTION_CMD_CURRENT_PAGE 0x66 // PAGE
+#define NEXTION_CMD_TOUCH_COORDINATE_AWAKE 0x67 // LISTEN
+#define NEXTION_CMD_TOUCH_COORDINATE_SLEEP 0x68 // LISTEN
+#define NEXTION_CMD_STRING_DATA_ENCLOSED 0x70 // READ
+#define NEXTION_CMD_NUMERIC_DATA_ENCLOSED 0x71 // READ
+#define NEXTION_CMD_AUTO_ENTER_SLEEP 0x86 // LISTEN
+#define NEXTION_CMD_AUTO_ENTER_WAKEUP 0x87 // LISTEN
+#define NEXTION_CMD_READY 0x88 // LISTEN
+#define NEXTION_CMD_START_MICROSD_UPDATE 0x89 // LISTEN
+#define NEXTION_CMD_TRANSPARENT_DATA_END 0xFD // WAVE
+#define NEXTION_CMD_TRANSPARENT_DATA_READY 0xFE // WAVE
 
 struct nextionComponent {
   int8_t page, id;
@@ -53,8 +53,8 @@ class INextion {
 
 class Nextion: public INextion {
   private:
-    typedef void (*nextionPointer) (nextionTouch *);
-    typedef void (*nextionTarget) (uint16_t *, uint16_t *);
+    typedef void (*nextionPointer) (uint8_t, uint8_t, bool *);
+    typedef void (*nextionTarget) (uint16_t, uint16_t, bool *);
 
     struct nextionCallback {
       nextionCallback *next;
@@ -176,35 +176,32 @@ class Nextion: public INextion {
       if (_serial->available() > 3) {
         String string = read();
 
-        switch ((uint8_t)string[0]) {
+        switch (string[0]) {
 
           case NEXTION_CMD_STARTUP:
-            if ((string[1] == 0x00) && (string[2] == 0x00)) break;
+            if ((string[1] == 0x00) && (string[2] == 0x00))
+              break;
+
+          case NEXTION_CMD_TOUCH_COORDINATE_AWAKE:
+          case NEXTION_CMD_TOUCH_COORDINATE_SLEEP:
+            if (_target) _target(uint16_t((string[1] * 256)) + uint8_t(string[2]), uint16_t((string[3] * 256)) + uint8_t(string[4]), string[5]);
+            break;
 
           case NEXTION_CMD_TOUCH_EVENT:
             nextionCallback *item = _callbacks;
             while (item) {
-              if ((item->touch.page == (uint8_t)string[1]) && (item->touch.id == (uint8_t)string[2]) && (item->touch.event == (uint8_t)string[3]) && (item->pointer)) {
-                nextionTouch touch = item->touch;
-                item->pointer(&touch);
+              if ((item->touch.page == string[1]) && (item->touch.id == string[2]) && (item->touch.event == string[3]) && (item->pointer)) {
+                item->pointer(string[1], string[2], string[3]);
                 break;
               }
               item = item->next;
             }
             break;
 
-          case NEXTION_CMD_TOUCH_COORDINATE_AWAKE: 
-          case NEXTION_CMD_TOUCH_COORDINATE_SLEEP:
-            if (_target) {
-              uint16_t x = (uint16_t)string[1] << 8 | (uint8_t)string[2], y = (uint16_t)string[3] << 8 | (uint8_t)string[4];
-              _target(&x, &y);
-            }
-            break;
-
-          case NEXTION_CMD_SERIAL_BUFFER_OVERFLOW: 
-          case NEXTION_CMD_AUTO_ENTER_SLEEP: 
-          case NEXTION_CMD_AUTO_ENTER_WAKEUP: 
-          case NEXTION_CMD_READY: 
+          case NEXTION_CMD_SERIAL_BUFFER_OVERFLOW:
+          case NEXTION_CMD_AUTO_ENTER_SLEEP:
+          case NEXTION_CMD_AUTO_ENTER_WAKEUP:
+          case NEXTION_CMD_READY:
           case NEXTION_CMD_START_MICROSD_UPDATE:
             break;
         }

@@ -40,7 +40,7 @@ String INextion::read() {
         return String((uint8_t)string[1]);
 
       default:
-        return string.substring(0, length - 3);
+        return string;
     }
     
   return "";
