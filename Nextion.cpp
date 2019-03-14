@@ -34,7 +34,7 @@ String INextion::read() {
         return string.substring(1, length - 3);
 
       case NEXTION_CMD_NUMERIC_DATA_ENCLOSED:
-        return ((uint32_t)string[4] << 24) | ((uint32_t)string[3] << 16) | ((uint32_t)string[2] << 8) | string[1];
+        return String((uint32_t(string[4]) << 24) + (uint32_t(string[3]) << 16) + (uint32_t(string[2]) << 8) + uint8_t(string[1]));
 
       case NEXTION_CMD_CURRENT_PAGE:
         return String((uint8_t)string[1]);

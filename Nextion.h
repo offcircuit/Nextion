@@ -11,20 +11,20 @@
 #define  NEXTION_EVENT_RELEASE 0
 #define  NEXTION_EVENT_PRESS 1
 
-#define NEXTION_CMD_STARTUP 0x00 // LISTEN
-#define NEXTION_CMD_SERIAL_BUFFER_OVERFLOW 0x24 // LISTEN
-#define NEXTION_CMD_TOUCH_EVENT 0x65 // LISTEN
-#define NEXTION_CMD_CURRENT_PAGE 0x66 // PAGE
-#define NEXTION_CMD_TOUCH_COORDINATE_AWAKE 0x67 // LISTEN
-#define NEXTION_CMD_TOUCH_COORDINATE_SLEEP 0x68 // LISTEN
-#define NEXTION_CMD_STRING_DATA_ENCLOSED 0x70 // READ
-#define NEXTION_CMD_NUMERIC_DATA_ENCLOSED 0x71 // READ
-#define NEXTION_CMD_AUTO_ENTER_SLEEP 0x86 // LISTEN
-#define NEXTION_CMD_AUTO_ENTER_WAKEUP 0x87 // LISTEN
-#define NEXTION_CMD_READY 0x88 // LISTEN
-#define NEXTION_CMD_START_MICROSD_UPDATE 0x89 // LISTEN
-#define NEXTION_CMD_TRANSPARENT_DATA_END 0xFD // WAVE
-#define NEXTION_CMD_TRANSPARENT_DATA_READY 0xFE // WAVE
+#define NEXTION_CMD_STARTUP 0x00                    // LISTEN
+#define NEXTION_CMD_SERIAL_BUFFER_OVERFLOW 0x24     // LISTEN
+#define NEXTION_CMD_TOUCH_EVENT 0x65                // LISTEN
+#define NEXTION_CMD_CURRENT_PAGE 0x66               // PAGE
+#define NEXTION_CMD_TOUCH_COORDINATE_AWAKE 0x67     // LISTEN
+#define NEXTION_CMD_TOUCH_COORDINATE_SLEEP 0x68     // LISTEN
+#define NEXTION_CMD_STRING_DATA_ENCLOSED 0x70       // READ
+#define NEXTION_CMD_NUMERIC_DATA_ENCLOSED 0x71      // READ
+#define NEXTION_CMD_AUTO_ENTER_SLEEP 0x86           // LISTEN
+#define NEXTION_CMD_AUTO_ENTER_WAKEUP 0x87          // LISTEN
+#define NEXTION_CMD_READY 0x88                      // LISTEN
+#define NEXTION_CMD_START_MICROSD_UPDATE 0x89       // LISTEN
+#define NEXTION_CMD_TRANSPARENT_DATA_END 0xFD       // WAVE
+#define NEXTION_CMD_TRANSPARENT_DATA_READY 0xFE     // WAVE
 
 struct nextionComponent {
   int8_t page, id;
@@ -184,7 +184,7 @@ class Nextion: public INextion {
 
           case NEXTION_CMD_TOUCH_COORDINATE_AWAKE:
           case NEXTION_CMD_TOUCH_COORDINATE_SLEEP:
-            if (_target) _target(uint16_t((string[1] * 256)) + uint8_t(string[2]), uint16_t((string[3] * 256)) + uint8_t(string[4]), string[5]);
+            if (_target) _target((uint16_t(string[1]) << 8) | uint8_t(string[2]), (uint16_t(string[3]) << 8) | uint8_t(string[4]), string[5]);
             break;
 
           case NEXTION_CMD_TOUCH_EVENT:
