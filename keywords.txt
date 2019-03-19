@@ -56,7 +56,6 @@ wave	KEYWORD2
 # Constants				(LITERAL1)
 ##################################################
 
-NEXTION_SERIAL_SIZE	LITERAL1
 NEXTION_SERIAL_CYCLES	LITERAL1
 
 NEXTION_EVENT_RELEASE	LITERAL1
