@@ -17,30 +17,31 @@ nextionTouch	KEYWORD1
 ##################################################
 
 begin	KEYWORD2
-transmit	KEYWORD2
+write	KEYWORD2
 
 attach	KEYWORD2
 circle	KEYWORD2
 clear	KEYWORD2
 click	KEYWORD2
 crop	KEYWORD2
-current	KEYWORD2
 detach	KEYWORD2
 disable	KEYWORD2
 enable	KEYWORD2
 erase	KEYWORD2
 fillCircle	KEYWORD2
 fillRectangle	KEYWORD2
+get	KEYWORD2
 hide	KEYWORD2
 line	KEYWORD2
 listen	KEYWORD2
+page	KEYWORD2
 picture	KEYWORD2
-rectangle	KEYWORD2
-read	KEYWORD2
 reboot	KEYWORD2
+rectangle	KEYWORD2
 reply	KEYWORD2
 show	KEYWORD2
 sleep	KEYWORD2
+target	KEYWORD2
 text	KEYWORD2
 wakeup	KEYWORD2
 wave	KEYWORD2
@@ -82,12 +83,6 @@ NEXTION_CMD_UNKNOWN_MESSAGE	LITERAL1
 ##################################################
 
 event	LITERAL2
-pointer	LITERAL2
-string	LITERAL2
-command	LITERAL2
-page	LITERAL2
 id	LITERAL2
-x	LITERAL2
-y	LITERAL2
-value	LITERAL2
+page	LITERAL2
 
