@@ -8,7 +8,7 @@ uint32_t INextion::begin(uint32_t speed = 0) {
   const uint8_t rate[8] = {1, 2, 4, 8, 16, 24, 48, 0};
   uint8_t baud = 0;
 
-  do  _serial->begin(rate[baud] * 2400UL);
+  do _serial->begin(rate[baud] * 2400UL);
   while ((write("connect") == "") && (7 > ++baud));
 
   if (speed) {
@@ -57,6 +57,7 @@ String INextion::wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length)
     for (size_t i = 0; i < length;) _serial->write(data[i++]);
     if (wait()) return read();
   }
+  return "";
 }
 
 String INextion::write(String instruction) {
