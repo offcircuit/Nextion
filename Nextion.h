@@ -8,8 +8,8 @@
 
 #define NEXTION_SERIAL_CYCLES 255
 
-#define  NEXTION_EVENT_RELEASE 0
-#define  NEXTION_EVENT_PRESS 1
+#define NEXTION_EVENT_RELEASE 0
+#define NEXTION_EVENT_PRESS 1
 
 #define NEXTION_CMD_STARTUP 0x00                    // LISTEN
 #define NEXTION_CMD_SERIAL_BUFFER_OVERFLOW 0x24     // LISTEN
@@ -48,13 +48,13 @@ class INextion {
     uint32_t begin(uint32_t speed = 0);
     String write(String instruction);
     String read();
-    String wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length);
+    String wave(uint8_t id, uint8_t channel, uint8_t *data, uint8_t length);
 };
 
 class Nextion: public INextion {
   private:
-    typedef void (*nextionPointer) (uint8_t, uint8_t, bool *);
-    typedef void (*nextionTarget) (uint16_t, uint16_t, bool *);
+    typedef void (*nextionPointer) (uint8_t, uint8_t, bool);
+    typedef void (*nextionTarget) (uint16_t, uint16_t, bool);
 
     struct nextionCallback {
       nextionCallback *next;
@@ -197,13 +197,6 @@ class Nextion: public INextion {
               item = item->next;
             }
             break;
-
-          case NEXTION_CMD_SERIAL_BUFFER_OVERFLOW:
-          case NEXTION_CMD_AUTO_ENTER_SLEEP:
-          case NEXTION_CMD_AUTO_ENTER_WAKEUP:
-          case NEXTION_CMD_READY:
-          case NEXTION_CMD_START_MICROSD_UPDATE:
-            break;
         }
         return (uint8_t)string[0];
       }
@@ -259,8 +252,8 @@ class Nextion: public INextion {
       return write("add " + String(id) + "," + String(channel) + "," + String(data));
     }
 
-    String wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length) {
-      return INextion::wave(id, channel, *data, length);
+    String wave(uint8_t id, uint8_t channel, uint8_t *data, uint8_t length) {
+      return INextion::wave(id, channel, data, length);
     }
 };
 
