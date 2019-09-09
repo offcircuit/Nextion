@@ -1,4 +1,5 @@
 #include "Nextion.h"
+#include "Arduino.h"
 
 INextion::INextion(uint8_t rx, uint8_t tx) {
   _serial = new SoftwareSerial(rx, tx);
@@ -17,14 +18,13 @@ uint32_t INextion::begin(uint32_t speed) {
     return speed;
   }
 
+  _serial->setTimeout(5);
   return (rate[baud] * 2400UL);
 }
 
 char* INextion::read() {
   char data[1024] = {};
-  uint16_t length = 0;
-  do while (_serial->available()) data[length++] = _serial->read();
-  while ((data[length - 1] & data[length - 2] & data[length - 3]) != 0xFF);
+  _serial->readBytes(data, 1024);
   return data;
 }
 
