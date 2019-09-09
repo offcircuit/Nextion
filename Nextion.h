@@ -1,7 +1,8 @@
 #ifndef NEXTION_H
 #define NEXTION_H
 
-#include "SoftwareSerial.h"
+#include <sys/types.h>
+#include <SoftwareSerial.h>
 
 #define  NEXTION_EVENT_RELEASE 0
 #define  NEXTION_EVENT_PRESS 1
