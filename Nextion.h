@@ -9,6 +9,7 @@
 #define  NEXTION_EVENT_PRESS 1
 
 #define NEXTION_SERIAL_CYCLES 255
+#define NEXTION_BUFFER_SIZE 12
 
 #define NEXTION_CMD_STARTUP 0x00                    // LISTEN
 #define NEXTION_CMD_SERIAL_BUFFER_OVERFLOW 0x24     // LISTEN
@@ -25,6 +26,28 @@
 #define NEXTION_CMD_TRANSPARENT_DATA_END 0xFD       // WAVE
 #define NEXTION_CMD_TRANSPARENT_DATA_READY 0xFE     // WAVE
 
+#define NEXTION_BKCMD_INVALID 0X00
+#define NEXTION_BKCMD_SUCCESS 0X01
+#define NEXTION_BKCMD_INVALID_COMPONENT 0X02
+#define NEXTION_BKCMD_INVALID_PAGE 0X03
+#define NEXTION_BKCMD_INVALID_PICTURE 0X04
+#define NEXTION_BKCMD_INVALID_FONT 0X05
+#define NEXTION_BKCMD_INVALID_BAUD 0X11
+#define NEXTION_BKCMD_INVALID_WAVE 0X12
+#define NEXTION_BKCMD_INVALID_VARIABLE 0X1A
+#define NEXTION_BKCMD_INVALID_OPERATION 0X1B
+#define NEXTION_BKCMD_ASSIGN_FAILED 0X1C
+#define NEXTION_BKCMD_EEPROM_FAILED 0X1D
+#define NEXTION_BKCMD_PARAMETER_INVALID 0X1E
+#define NEXTION_BKCMD_IO_FAILED 0X1F
+#define NEXTION_BKCMD_UNDEFINED_ESCAPR 0X20
+#define NEXTION_BKCMD_NAME_TOO_LONG 0X23
+
+#define NEXTION_BKCMD_RETURN_OFF 0
+#define NEXTION_BKCMD_RETURN_SUCCESS 1
+#define NEXTION_BKCMD_RETURN_FAILS 2
+#define NEXTION_BKCMD_RETURN_ALL 3
+
 struct nextionComponent {
   int8_t page, id;
 };
@@ -37,8 +60,8 @@ struct nextionTouch {
 class Nextion {
   protected:
     SoftwareSerial *_serial;
-    char *buffer = (char *) malloc(12);
-    uint8_t bkcmd = 0;
+    char *buffer = (char *) malloc(NEXTION_BUFFER_SIZE);
+    uint8_t bkcmd = NEXTION_BKCMD_RETURN_FAILS;
 
   private:
     typedef void (*nextionPointer) (uint8_t, uint8_t, bool);
@@ -65,84 +88,72 @@ class Nextion {
     Nextion(uint8_t rx, uint8_t tx);
     uint32_t begin(uint32_t speed = 0);
 
-    void reading(uint8_t length) {
+    void t(uint8_t length) {
       String out;
       for (int i = 0; i < length; i++) {
         out += String(uint8_t(buffer[i]), HEX) + ",";
       }
       Serial.print("len = ");
-      Serial.println(length);
-      Serial.println(out);
+      Serial.print(length);
+      Serial.print(" val = ");
+      Serial.println(out.substring(0, out.lastIndexOf(",")));
     }
-    void r(String data) {
-      String out;
-      for (int i = 0; i < data.length(); i++) {
-        out += String(char(data[i]), HEX) + ",";
-      }
-      Serial.print("len = ");
-      Serial.println(data.length());
-      Serial.println(out);
-    }
-
     void attach();
     void attach(nextionComponent component, bool event, nextionPointer pointer);
     void attach(nextionTouch touch, nextionPointer pointer);
+    uint8_t circle(uint16_t x, uint16_t y, uint16_t r, uint16_t c);
+    uint8_t clear(uint16_t c = 0xFFFFFF);
+    uint8_t click(uint8_t id, bool event);
+    uint8_t crop(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t resource);
+    uint8_t crop(uint16_t dx, uint16_t dy, uint16_t w, uint16_t h, uint16_t sx, uint16_t sy, uint8_t resource);
     void detach();
     void detach(nextionComponent component, bool event);
     void detach(nextionTouch touch);
-    uint8_t listen();
+    uint8_t disable(uint8_t id);
+    uint8_t enable(uint8_t id);
+    uint8_t erase(uint8_t id);
+    uint8_t erase(uint8_t id, uint8_t channel);
+    uint8_t fillCircle(uint16_t x, uint16_t y, uint16_t r, uint16_t c);
+    uint8_t fillRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t c);
+    void flush();
+    String get(String attribute);
+    uint8_t hide(uint8_t id);
+    uint8_t line(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t c);
+    int16_t listen();
+    int16_t page();
+    uint8_t page(uint8_t page);
+    uint8_t picture(uint16_t x, uint16_t y, uint8_t resource);
+    uint8_t print(String data);
+    void println(String data);
+    uint8_t reboot();
+    uint8_t rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t c);
+    uint8_t reply(bool state);
+    uint8_t show(uint8_t id);
+    uint8_t sleep();
+    void target(nextionTarget pointer);
+    uint8_t text(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t font, uint16_t foreground, uint16_t background, uint8_t alignX, uint8_t alignY, uint8_t fill, String text);
+    uint8_t wakeup();
+    uint8_t wave(uint8_t id, uint8_t channel, uint8_t data);
 
-    String get(String attribute) {
-      uint8_t signal;
-      flush();
-      _serial->print("get " + attribute + char(0xFF) + char(0xFF) + char(0xFF));
-      for (signal = NEXTION_SERIAL_CYCLES; signal-- && !_serial->available(););
 
-      if (signal) switch (buffer[0] = _serial->read()) {
-          case NEXTION_CMD_STRING_DATA_ENCLOSED:
-            String data = "";
-            do while (_serial->available()) data += char(_serial->read());
-            while (signal-- && ((data.length() < 4) || (((char)data[data.length() - 1] & (char)data[data.length() - 2] & (char)data[data.length() - 3]) != 0xFF)));
-            return data.substring(0, data.length() - 3);
-
-          case NEXTION_CMD_NUMERIC_DATA_ENCLOSED:
-            readBytes(1);
-            return String((uint32_t(buffer[4]) << 24) + (uint32_t(buffer[3]) << 16) + (uint32_t(buffer[2]) << 8) + uint8_t(buffer[1]));
-        }
-      return "";
+    uint8_t wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length) {
+      if (print("addt " + String(id) + "," + String(channel) + "," + String(length)) == NEXTION_CMD_TRANSPARENT_DATA_READY) {
+        for (size_t i = 0; i < length;) _serial->write(data[i++]);
+        if (read()) return buffer[0];
+      }
+      return 0;
     }
 
-    int16_t page() {
-      if (print("sendme") == NEXTION_CMD_CURRENT_PAGE) return uint8_t(buffer[1]);
-      else return -1;
-    }
-
-    bool page(uint8_t page) {
-      return !print("page " + String(page));
-    }
-    
-    void flush() {
+    uint8_t read() {
+      uint8_t length = NEXTION_BUFFER_SIZE;
       uint8_t signal = NEXTION_SERIAL_CYCLES;
-      do while (_serial->available()) _serial->read(); while (signal--);
-    }
-
-    uint8_t print(const String data) {
-      flush();
-      _serial->print(data + char(0xFF) + char(0xFF) + char(0xFF));
-      readBytes();
-      return uint8_t(buffer[0]);
-    }
-
-    uint8_t readBytes(uint16_t length = 0) {
-      uint8_t signal = NEXTION_SERIAL_CYCLES;
-      do while (_serial->available()) buffer[length++] = char(_serial->read()); while (signal--);
-      reading(length);
+      while (length) buffer[--length] = char(0x00);
+      do while (_serial->available()) buffer[length++] += char(_serial->read());
+      while (signal-- && ((length < 4) || (((char)buffer[length - 1] & (char)buffer[length - 2] & (char)buffer[length - 3]) != 0xFF)));
+      t(length);
       return length;
     }
 
-    void write(String data) {
-      print(data);
-    }
 };
 
 #endif
