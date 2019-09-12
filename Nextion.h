@@ -1,7 +1,4 @@
 #ifndef NEXTION_H
-#ifndef INEXTION_H
-
-#define INEXTION_H
 #define NEXTION_H
 
 #include <sys/types.h>
@@ -10,6 +7,8 @@
 
 #define  NEXTION_EVENT_RELEASE 0
 #define  NEXTION_EVENT_PRESS 1
+
+#define NEXTION_SERIAL_CYCLES 255
 
 #define NEXTION_CMD_STARTUP 0x00                    // LISTEN
 #define NEXTION_CMD_SERIAL_BUFFER_OVERFLOW 0x24     // LISTEN
@@ -35,34 +34,12 @@ struct nextionTouch {
   bool event;
 };
 
-class INextion {
+class Nextion {
   protected:
     SoftwareSerial *_serial;
-  public:
-    INextion(uint8_t rx, uint8_t tx);
+    char *buffer = (char *) malloc(12);
+    uint8_t bkcmd = 0;
 
-    uint32_t begin(uint32_t speed = 0);
-    uint8_t write(String data);
-    void reading(char *data, uint16_t length) {
-      String out;
-      for (int i = 0; i < length; i++) {
-        out += String(char(data[i]), HEX) + ",";
-      }
-      Serial.print("len = ");
-      Serial.println(out);
-    }
-    void reading(String data) {
-      String out;
-      for (int i = 0; i < data.length(); i++) {
-        out += String(char(data[i]), HEX) + ",";
-      }
-      Serial.print("len = ");
-      Serial.println(out);
-    }
-
-};
-
-class Nextion: public INextion {
   private:
     typedef void (*nextionPointer) (uint8_t, uint8_t, bool);
     typedef void (*nextionTarget) (uint16_t, uint16_t, bool);
@@ -85,79 +62,87 @@ class Nextion: public INextion {
     }
 
   public:
-    Nextion(uint8_t rx, uint8_t tx): INextion(rx, tx) {};
+    Nextion(uint8_t rx, uint8_t tx);
+    uint32_t begin(uint32_t speed = 0);
 
-    void attach() {
-      _callbacks = NULL;
-    }
-
-    void attach(nextionComponent component, bool event, nextionPointer pointer) {
-      attach({component.page, component.id, event}, pointer);
-    }
-
-    void attach(nextionTouch touch, nextionPointer pointer) {
-      if (_callbacks) {
-        nextionCallback *item = _callbacks;
-
-        do if ((item->touch.page == touch.page) && (item->touch.id == touch.id) && (item->touch.event == touch.event)) {
-            item->pointer = pointer;
-            return;
-          } while (item->next && (item = item->next));
-        item->next = callback(touch, pointer);
-
-      } else _callbacks = callback(touch, pointer);
-    }
-
-    void detach() {
-      _callbacks = NULL;
-    }
-
-    void detach(nextionComponent component, bool event) {
-      detach({component.page, component.id, event});
-    }
-
-    void detach(nextionTouch touch) {
-      if (_callbacks) {
-        nextionCallback *item = _callbacks, *preview;
-        do if ((item->touch.page == touch.page) && (item->touch.id == touch.id) && (item->touch.event == touch.event)) {
-            if (item == _callbacks) _callbacks = _callbacks->next;
-            else preview->next = ((item->next) ? item->next : NULL);
-            return;
-          } while (item->next && (preview = item) && (item = item->next));
+    void reading(uint8_t length) {
+      String out;
+      for (int i = 0; i < length; i++) {
+        out += String(uint8_t(buffer[i]), HEX) + ",";
       }
+      Serial.print("len = ");
+      Serial.println(length);
+      Serial.println(out);
+    }
+    void r(String data) {
+      String out;
+      for (int i = 0; i < data.length(); i++) {
+        out += String(char(data[i]), HEX) + ",";
+      }
+      Serial.print("len = ");
+      Serial.println(data.length());
+      Serial.println(out);
     }
 
-    uint8_t listen() {
-      if (_serial->available() > 4) {
-        char buffer[8];
-        switch (uint8_t(_serial->read())) {
+    void attach();
+    void attach(nextionComponent component, bool event, nextionPointer pointer);
+    void attach(nextionTouch touch, nextionPointer pointer);
+    void detach();
+    void detach(nextionComponent component, bool event);
+    void detach(nextionTouch touch);
+    uint8_t listen();
 
-          case NEXTION_CMD_STARTUP:
-            //if ((data[1] == 0x00) && (data[2] == 0x00))
-            break;
+    String get(String attribute) {
+      uint8_t signal;
+      flush();
+      _serial->print("get " + attribute + char(0xFF) + char(0xFF) + char(0xFF));
+      for (signal = NEXTION_SERIAL_CYCLES; signal-- && !_serial->available(););
 
-          case NEXTION_CMD_TOUCH_COORDINATE_AWAKE:
-          case NEXTION_CMD_TOUCH_COORDINATE_SLEEP:
-            _serial->readBytes(buffer, 8);
-            if (_target) _target((uint16_t(buffer[0]) << 8) | uint8_t(buffer[1]), (uint16_t(buffer[2]) << 8) | uint8_t(buffer[3]), buffer[4]);
-            break;
+      if (signal) switch (buffer[0] = _serial->read()) {
+          case NEXTION_CMD_STRING_DATA_ENCLOSED:
+            String data = "";
+            do while (_serial->available()) data += char(_serial->read());
+            while (signal-- && ((data.length() < 4) || (((char)data[data.length() - 1] & (char)data[data.length() - 2] & (char)data[data.length() - 3]) != 0xFF)));
+            return data.substring(0, data.length() - 3);
 
-          case NEXTION_CMD_TOUCH_EVENT:
-            _serial->readBytes(buffer, 6);
-            nextionCallback *item = _callbacks;
-            while (item) {
-              if ((item->touch.page == buffer[0]) && (item->touch.id == buffer[1]) && (item->touch.event == buffer[2]) && (item->pointer)) {
-                item->pointer(buffer[0], buffer[1], buffer[2]);
-                break;
-              }
-              item = item->next;
-            }
-            break;
+          case NEXTION_CMD_NUMERIC_DATA_ENCLOSED:
+            readBytes(1);
+            return String((uint32_t(buffer[4]) << 24) + (uint32_t(buffer[3]) << 16) + (uint32_t(buffer[2]) << 8) + uint8_t(buffer[1]));
         }
-      }
-      return 0;
+      return "";
+    }
+
+    int16_t page() {
+      if (print("sendme") == NEXTION_CMD_CURRENT_PAGE) return uint8_t(buffer[1]);
+      else return -1;
+    }
+
+    bool page(uint8_t page) {
+      return !print("page " + String(page));
+    }
+    
+    void flush() {
+      uint8_t signal = NEXTION_SERIAL_CYCLES;
+      do while (_serial->available()) _serial->read(); while (signal--);
+    }
+
+    uint8_t print(const String data) {
+      flush();
+      _serial->print(data + char(0xFF) + char(0xFF) + char(0xFF));
+      readBytes();
+      return uint8_t(buffer[0]);
+    }
+
+    uint8_t readBytes(uint16_t length = 0) {
+      uint8_t signal = NEXTION_SERIAL_CYCLES;
+      do while (_serial->available()) buffer[length++] = char(_serial->read()); while (signal--);
+      reading(length);
+      return length;
+    }
+
+    void write(String data) {
+      print(data);
     }
 };
 
-#endif
 #endif
