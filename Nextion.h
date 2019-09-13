@@ -84,7 +84,7 @@ class Nextion {
 
   public:
     Nextion(uint8_t rx, uint8_t tx);
-    uint32_t begin(uint32_t speed = 0);
+    uint32_t begin(uint32_t baud = 0);
     void attach();
     void attach(nextionComponent component, bool event, nextionPointer pointer);
     void attach(nextionTouch touch, nextionPointer pointer);
