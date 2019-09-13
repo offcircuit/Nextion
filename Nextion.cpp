@@ -42,7 +42,7 @@ uint8_t Nextion::circle(uint16_t x, uint16_t y, uint16_t r, uint16_t c) {
   return print("cir " + String(x) + "," + String(y) + "," + String(r) + "," + String(c));
 }
 
-uint8_t Nextion::clear(uint16_t c = 0xFFFFFF) {
+uint8_t Nextion::clear(uint16_t c) {
   return print("cls " + String(c));
 }
 
@@ -101,12 +101,14 @@ uint8_t Nextion::fillRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h, u
   return print("fill " + String(x) + "," + String(y) + "," + String(w) + "," + String(h) + "," + String(c));
 }
 
-
 void Nextion::flush() {
   uint8_t length = NEXTION_BUFFER_SIZE;
   uint8_t signal = NEXTION_SERIAL_CYCLES;
   while (length) buffer[--length] = char(0x00);
-  do while (_serial->available()) _serial->read(); while (--signal);
+  do while (_serial->available()) {
+      _serial->read();
+      signal = NEXTION_SERIAL_CYCLES;
+    } while (--signal);
 }
 
 String Nextion::get(String attribute) {
@@ -119,13 +121,17 @@ String Nextion::get(String attribute) {
   switch (buffer[0] = char(_serial->read())) {
 
     case NEXTION_CMD_STRING_DATA_ENCLOSED:
-      do while (_serial->available()) data += char(_serial->read());
-      while (signal-- && ((data.length() < 4) || (((char)data[data.length() - 1] & (char)data[data.length() - 2] & (char)data[data.length() - 3]) != 0xFF)));
+      do while (_serial->available()) {
+          data += char(_serial->read());
+          signal = NEXTION_SERIAL_CYCLES;
+        } while (signal-- && ((data.length() < 4) || (((char)data[data.length() - 1] & (char)data[data.length() - 2] & (char)data[data.length() - 3]) != 0xFF)));
       return data.substring(0, data.length() - 3);
 
     case NEXTION_CMD_NUMERIC_DATA_ENCLOSED:
-      do while (_serial->available()) buffer[length++] += char(_serial->read());
-      while (signal-- && ((length < 4) || (((char)buffer[length - 1] & (char)buffer[length - 2] & (char)buffer[length - 3]) != 0xFF)));
+      do while (_serial->available()) {
+          buffer[length++] += char(_serial->read());
+          signal = NEXTION_SERIAL_CYCLES;
+        } while (signal-- && ((length < 4) || (((char)buffer[length - 1] & (char)buffer[length - 2] & (char)buffer[length - 3]) != 0xFF)));
       return String((uint32_t(buffer[4]) << 24) + (uint32_t(buffer[3]) << 16) + (uint32_t(buffer[2]) << 8) + uint8_t(buffer[1]));
   }
   return data;
@@ -139,19 +145,13 @@ uint8_t Nextion::line(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16
   return print("line " + String(x1) + "," + String(y1) + "," + String(x2) + "," + String(y2) + "," + String(c));
 }
 
-
 int16_t Nextion::listen() {
   if ((_serial->available() > 3) && read()) switch (buffer[0]) {
-
-      case NEXTION_CMD_STARTUP:
-        return uint8_t(buffer[0]);
-        break;
 
       case NEXTION_CMD_TOUCH_COORDINATE_AWAKE:
       case NEXTION_CMD_TOUCH_COORDINATE_SLEEP:
         if (_target) _target((uint16_t(buffer[1]) << 8) | uint8_t(buffer[2]), (uint16_t(buffer[3]) << 8) | uint8_t(buffer[4]), buffer[5]);
         return uint8_t(buffer[0]);
-        break;
 
       case NEXTION_CMD_TOUCH_EVENT:
         nextionCallback *item = _callbacks;
@@ -163,21 +163,14 @@ int16_t Nextion::listen() {
           item = item->next;
         }
         return uint8_t(buffer[0]);
-        break;
 
+      case NEXTION_CMD_STARTUP:
       case NEXTION_CMD_SERIAL_BUFFER_OVERFLOW:
-        return uint8_t(buffer[0]);
-        break;
-
       case NEXTION_CMD_AUTO_ENTER_SLEEP:
       case NEXTION_CMD_AUTO_ENTER_WAKEUP:
-        return uint8_t(buffer[0]);
-        break;
-
       case NEXTION_CMD_READY:
       case NEXTION_CMD_START_MICROSD_UPDATE:
         return uint8_t(buffer[0]);
-        break;
 
       default:
         flush();
@@ -245,5 +238,3 @@ uint8_t Nextion::wakeup() {
 uint8_t Nextion::wave(uint8_t id, uint8_t channel, uint8_t data) {
   return print("add " + String(id) + "," + String(channel) + "," + String(data));
 }
-
-
