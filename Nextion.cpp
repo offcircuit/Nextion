@@ -11,7 +11,7 @@ uint32_t Nextion::begin(uint32_t baud) {
   do _serial->begin(rate[index] * 2400UL);
   while (!print("code_c") && (7 > ++index));
 
-  if ((baud) && print("baud=" + String(baud))) {
+  if ((baud) && (print("baud=" + String(baud)) != NEXTION_BKCMD_BAUD_INVALID)) {
     _serial->begin(baud);
     return baud;
   }
@@ -202,6 +202,17 @@ void Nextion::println(String data) {
   _serial->print(data + char(0xFF) + char(0xFF) + char(0xFF));
 }
 
+uint8_t Nextion::read() {
+  uint8_t length = NEXTION_BUFFER_SIZE;
+  uint8_t signal = NEXTION_SERIAL_CYCLES;
+  while (length) buffer[--length] = char(0x00);
+  do while (_serial->available()) {
+      buffer[length++] += char(_serial->read());
+      signal = NEXTION_SERIAL_CYCLES;
+    } while (signal-- && ((length < 4) || (((char)buffer[length - 1] & (char)buffer[length - 2] & (char)buffer[length - 3]) != 0xFF)));
+  return length;
+}
+
 uint8_t Nextion::reboot() {
   return print("rest");
 }
@@ -237,4 +248,11 @@ uint8_t Nextion::wakeup() {
 
 uint8_t Nextion::wave(uint8_t id, uint8_t channel, uint8_t data) {
   return print("add " + String(id) + "," + String(channel) + "," + String(data));
+}
+
+uint8_t Nextion::wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length) {
+  if (print("addt " + String(id) + "," + String(channel) + "," + String(length)) == NEXTION_CMD_TRANSPARENT_DATA_READY) {
+    for (size_t i = 0; i < length;) _serial->write(data[i++]);
+  }
+  return read();
 }
