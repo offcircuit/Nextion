@@ -1,10 +1,9 @@
 #include <DTime.h>
-#include <Nextion.h>
+#include "Nextion.h"
 #include <SDHT.h>
 
 bool event = 0;
 String text = "";
-uint16_t t = millis() + 1000;
 
 DTime dtime;
 Nextion nextion(4, 5);
@@ -23,8 +22,7 @@ void setup() {
 }
 
 void loop() {
-  if (abs(millis() - t) > 1000) {
-    t += 1000;
+  if (!(millis() % 1000)) {
     dtime.tick();
     sendData();
   }
