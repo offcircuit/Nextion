@@ -61,7 +61,6 @@ class Nextion {
   protected:
     SoftwareSerial *_serial;
     char *buffer = (char *) malloc(NEXTION_BUFFER_SIZE);
-    uint8_t bkcmd = NEXTION_BKCMD_RETURN_FAILS;
 
   private:
     typedef void (*nextionPointer) (uint8_t, uint8_t, bool);
@@ -87,17 +86,6 @@ class Nextion {
   public:
     Nextion(uint8_t rx, uint8_t tx);
     uint32_t begin(uint32_t speed = 0);
-
-    void t(uint8_t length) {
-      String out;
-      for (int i = 0; i < length; i++) {
-        out += String(uint8_t(buffer[i]), HEX) + ",";
-      }
-      Serial.print("len = ");
-      Serial.print(length);
-      Serial.print(" val = ");
-      Serial.println(out.substring(0, out.lastIndexOf(",")));
-    }
     void attach();
     void attach(nextionComponent component, bool event, nextionPointer pointer);
     void attach(nextionTouch touch, nextionPointer pointer);
@@ -135,6 +123,16 @@ class Nextion {
     uint8_t wakeup();
     uint8_t wave(uint8_t id, uint8_t channel, uint8_t data);
 
+    void t(uint8_t length) {
+      String out;
+      for (int i = 0; i < length; i++) {
+        out += String(uint8_t(buffer[i]), HEX) + ",";
+      }
+      Serial.print("len = ");
+      Serial.print(length);
+      Serial.print(" val = ");
+      Serial.println(out.substring(0, out.lastIndexOf(",")));
+    }
 
     uint8_t wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length) {
       if (print("addt " + String(id) + "," + String(channel) + "," + String(length)) == NEXTION_CMD_TRANSPARENT_DATA_READY) {
@@ -148,12 +146,13 @@ class Nextion {
       uint8_t length = NEXTION_BUFFER_SIZE;
       uint8_t signal = NEXTION_SERIAL_CYCLES;
       while (length) buffer[--length] = char(0x00);
-      do while (_serial->available()) buffer[length++] += char(_serial->read());
-      while (signal-- && ((length < 4) || (((char)buffer[length - 1] & (char)buffer[length - 2] & (char)buffer[length - 3]) != 0xFF)));
+      do while (_serial->available()) {
+          buffer[length++] += char(_serial->read());
+          signal = NEXTION_SERIAL_CYCLES;
+        } while (signal-- && ((length < 4) || (((char)buffer[length - 1] & (char)buffer[length - 2] & (char)buffer[length - 3]) != 0xFF)));
       t(length);
       return length;
     }
-
 };
 
 #endif
