@@ -3,50 +3,49 @@
 
 #include <sys/types.h>
 #include <SoftwareSerial.h>
-#include <Arduino.h>
 
-#define  NEXTION_EVENT_RELEASE 0
-#define  NEXTION_EVENT_PRESS 1
+#define NEXTION_BUFFER_SIZE                12
+#define NEXTION_SERIAL_CYCLES              255
 
-#define NEXTION_SERIAL_CYCLES 255
-#define NEXTION_BUFFER_SIZE 12
+#define  NEXTION_EVENT_RELEASE             0
+#define  NEXTION_EVENT_PRESS               1
 
-#define NEXTION_CMD_STARTUP 0x00                    // LISTEN
-#define NEXTION_CMD_SERIAL_BUFFER_OVERFLOW 0x24     // LISTEN
-#define NEXTION_CMD_TOUCH_EVENT 0x65                // LISTEN
-#define NEXTION_CMD_CURRENT_PAGE 0x66               // PAGE
-#define NEXTION_CMD_TOUCH_COORDINATE_AWAKE 0x67     // LISTEN
-#define NEXTION_CMD_TOUCH_COORDINATE_SLEEP 0x68     // LISTEN
-#define NEXTION_CMD_STRING_DATA_ENCLOSED 0x70       // READ
-#define NEXTION_CMD_NUMERIC_DATA_ENCLOSED 0x71      // READ
-#define NEXTION_CMD_AUTO_ENTER_SLEEP 0x86           // LISTEN
-#define NEXTION_CMD_AUTO_ENTER_WAKEUP 0x87          // LISTEN
-#define NEXTION_CMD_READY 0x88                      // LISTEN
-#define NEXTION_CMD_START_MICROSD_UPDATE 0x89       // LISTEN
-#define NEXTION_CMD_TRANSPARENT_DATA_END 0xFD       // WAVE
-#define NEXTION_CMD_TRANSPARENT_DATA_READY 0xFE     // WAVE
+#define NEXTION_CMD_STARTUP                0x00
+#define NEXTION_CMD_SERIAL_BUFFER_OVERFLOW 0x24
+#define NEXTION_CMD_TOUCH_EVENT            0x65
+#define NEXTION_CMD_CURRENT_PAGE           0x66
+#define NEXTION_CMD_TOUCH_COORDINATE_AWAKE 0x67
+#define NEXTION_CMD_TOUCH_COORDINATE_SLEEP 0x68
+#define NEXTION_CMD_STRING_DATA_ENCLOSED   0x70
+#define NEXTION_CMD_NUMERIC_DATA_ENCLOSED  0x71
+#define NEXTION_CMD_AUTO_ENTER_SLEEP       0x86
+#define NEXTION_CMD_AUTO_ENTER_WAKEUP      0x87
+#define NEXTION_CMD_READY                  0x88
+#define NEXTION_CMD_START_MICROSD_UPDATE   0x89
+#define NEXTION_CMD_TRANSPARENT_DATA_END   0xFD
+#define NEXTION_CMD_TRANSPARENT_DATA_READY 0xFE
 
-#define NEXTION_BKCMD_INVALID 0X00
-#define NEXTION_BKCMD_SUCCESS 0X01
-#define NEXTION_BKCMD_INVALID_COMPONENT 0X02
-#define NEXTION_BKCMD_INVALID_PAGE 0X03
-#define NEXTION_BKCMD_INVALID_PICTURE 0X04
-#define NEXTION_BKCMD_INVALID_FONT 0X05
-#define NEXTION_BKCMD_INVALID_BAUD 0X11
-#define NEXTION_BKCMD_INVALID_WAVE 0X12
-#define NEXTION_BKCMD_INVALID_VARIABLE 0X1A
-#define NEXTION_BKCMD_INVALID_OPERATION 0X1B
-#define NEXTION_BKCMD_ASSIGN_FAILED 0X1C
-#define NEXTION_BKCMD_EEPROM_FAILED 0X1D
-#define NEXTION_BKCMD_PARAMETER_INVALID 0X1E
-#define NEXTION_BKCMD_IO_FAILED 0X1F
-#define NEXTION_BKCMD_UNDEFINED_ESCAPR 0X20
-#define NEXTION_BKCMD_NAME_TOO_LONG 0X23
+#define NEXTION_BKCMD_INVALID              0x00
+#define NEXTION_BKCMD_SUCCESS              0x01
+#define NEXTION_BKCMD_COMPONENT_INVALID    0x02
+#define NEXTION_BKCMD_PAGE_INVALID         0x03
+#define NEXTION_BKCMD_PICTURE_INVALID      0x04
+#define NEXTION_BKCMD_FONT_INVALID         0x05
+#define NEXTION_BKCMD_BAUD_INVALID         0x11
+#define NEXTION_BKCMD_WAVE_INVALID         0x12
+#define NEXTION_BKCMD_VARIABLE_INVALID     0x1A
+#define NEXTION_BKCMD_OPERATION_INVALID    0x1B
+#define NEXTION_BKCMD_ASSIGN_FAILED        0x1C
+#define NEXTION_BKCMD_EEPROM_FAILED        0x1D
+#define NEXTION_BKCMD_PARAMETER_INVALID    0x1E
+#define NEXTION_BKCMD_IO_FAILED            0x1F
+#define NEXTION_BKCMD_ESCAPE_UNDEFINED     0x20
+#define NEXTION_BKCMD_NAME_TOO_LONG        0x23
 
-#define NEXTION_BKCMD_RETURN_OFF 0
-#define NEXTION_BKCMD_RETURN_SUCCESS 1
-#define NEXTION_BKCMD_RETURN_FAILS 2
-#define NEXTION_BKCMD_RETURN_ALL 3
+#define NEXTION_BKCMD_RETURN_OFF           0
+#define NEXTION_BKCMD_RETURN_SUCCESS       1
+#define NEXTION_BKCMD_RETURN_FAILS         2
+#define NEXTION_BKCMD_RETURN_ALL           3
 
 struct nextionComponent {
   int8_t page, id;
@@ -113,6 +112,7 @@ class Nextion {
     uint8_t picture(uint16_t x, uint16_t y, uint8_t resource);
     uint8_t print(String data);
     void println(String data);
+    uint8_t read();
     uint8_t reboot();
     uint8_t rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t c);
     uint8_t reply(bool state);
@@ -122,37 +122,7 @@ class Nextion {
     uint8_t text(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t font, uint16_t foreground, uint16_t background, uint8_t alignX, uint8_t alignY, uint8_t fill, String text);
     uint8_t wakeup();
     uint8_t wave(uint8_t id, uint8_t channel, uint8_t data);
-
-    void t(uint8_t length) {
-      String out;
-      for (int i = 0; i < length; i++) {
-        out += String(uint8_t(buffer[i]), HEX) + ",";
-      }
-      Serial.print("len = ");
-      Serial.print(length);
-      Serial.print(" val = ");
-      Serial.println(out.substring(0, out.lastIndexOf(",")));
-    }
-
-    uint8_t wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length) {
-      if (print("addt " + String(id) + "," + String(channel) + "," + String(length)) == NEXTION_CMD_TRANSPARENT_DATA_READY) {
-        for (size_t i = 0; i < length;) _serial->write(data[i++]);
-        if (read()) return buffer[0];
-      }
-      return 0;
-    }
-
-    uint8_t read() {
-      uint8_t length = NEXTION_BUFFER_SIZE;
-      uint8_t signal = NEXTION_SERIAL_CYCLES;
-      while (length) buffer[--length] = char(0x00);
-      do while (_serial->available()) {
-          buffer[length++] += char(_serial->read());
-          signal = NEXTION_SERIAL_CYCLES;
-        } while (signal-- && ((length < 4) || (((char)buffer[length - 1] & (char)buffer[length - 2] & (char)buffer[length - 3]) != 0xFF)));
-      t(length);
-      return length;
-    }
+    uint8_t wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length);
 };
 
 #endif
