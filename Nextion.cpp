@@ -5,18 +5,18 @@ Nextion::Nextion(uint8_t rx, uint8_t tx) {
 }
 
 uint32_t Nextion::begin(uint32_t baud) {
-  const uint8_t rate[7] = {1, 2, 4, 8, 16, 24, 48};
+  const uint8_t rate[8] = {1, 2, 4, 8, 16, 24, 48, 0};
   uint8_t index = 0;
 
   do _serial->begin(rate[index] * 2400UL);
   while (!print("code_c") && (7 > ++index));
 
-  if (baud && (print("baud=" + String(baud)) != NEXTION_BKCMD_BAUD_INVALID)) {
+  if (baud && print("baud=" + String(baud)) != NEXTION_BKCMD_ASSIGN_FAILED) {
     _serial->begin(baud);
     return baud;
   }
 
-  return (rate[index] * 2400UL);
+  return rate[index] * 2400UL;
 }
 
 void Nextion::attach() {
