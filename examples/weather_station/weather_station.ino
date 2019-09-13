@@ -4,26 +4,29 @@
 
 bool event = 0;
 String text = "";
-uint32_t t = millis();
+uint16_t t = millis() + 1000;
+
 DTime dtime;
-Nextion nextion(5, 4);
+Nextion nextion(4, 5);
 SDHT dht;
 
 void setup() {
   Serial.begin(115200);
-  nextion.begin();
+  nextion.begin(9600);
+
   for (int i = 1; i <= 10; i++) nextion.attach({2, i, NEXTION_EVENT_RELEASE}, numericEvent);
   nextion.attach({2, 11, NEXTION_EVENT_RELEASE}, OKEvent);
   nextion.attach({1, 2, NEXTION_EVENT_RELEASE}, configEvent);
   nextion.attach({1, 1, NEXTION_EVENT_RELEASE}, configEvent);
+
   sendData();
 }
 
 void loop() {
-  if (t + 1000 < millis()) {
-    sendData();
+  if (abs(millis() - t) > 1000) {
+    t += 1000;
     dtime.tick();
-    t = millis();
+    sendData();
   }
   nextion.listen();
 }
