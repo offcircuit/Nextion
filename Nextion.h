@@ -10,6 +10,9 @@
 #define  NEXTION_EVENT_RELEASE             0
 #define  NEXTION_EVENT_PRESS               1
 
+#define NEXTION_MODE_AWAKE                 0
+#define NEXTION_MODE_SLEEP                 1
+
 #define NEXTION_CMD_STARTUP                0x00
 #define NEXTION_CMD_SERIAL_BUFFER_OVERFLOW 0x24
 #define NEXTION_CMD_TOUCH_EVENT            0x65
@@ -60,9 +63,9 @@ struct nextionComponent {
   int8_t page, id;
 };
 
-struct nextionTouch {
+struct nextionEvent {
   int8_t page, id;
-  bool event;
+  bool state;
 };
 
 class Nextion {
@@ -74,34 +77,32 @@ class Nextion {
     uint8_t _signal = NEXTION_SERIAL_CYCLES;
 
   private:
-    typedef void (*nextionPointer) (uint8_t, uint8_t, bool);
-    typedef void (*nextionTarget) (uint16_t, uint16_t, bool);
+    typedef void (*nextionOnChange) (bool);
+    typedef void (*nextionOnEvent) (uint8_t, uint8_t, bool);
+    typedef void (*nextionOnPointer) ();
+    typedef void (*nextionOnTouch) (uint16_t, uint16_t, bool);
 
     struct nextionCallback {
       nextionCallback *next;
-      nextionTouch touch;
-      nextionPointer pointer;
+      nextionEvent event;
+      nextionOnEvent pointer;
     };
 
     nextionCallback *_callbacks;
-    nextionTarget _target;
+    nextionOnChange _onChange;
+    nextionOnPointer _onReady;
+    nextionOnPointer _onStart;
+    nextionOnTouch _onTouch;
 
-    nextionCallback *callback(nextionTouch touch, nextionPointer pointer) {
-      nextionCallback *item = new nextionCallback;
-      item->next = NULL;
-      item->pointer = pointer;
-      item->touch = touch;
-      return item;
-     }
- 
+    nextionCallback *callback(nextionEvent event, nextionOnEvent pointer);
     uint8_t read();
 
   public:
     Nextion(uint8_t rx, uint8_t tx);
     uint32_t begin(uint32_t baud = 0);
     void attach();
-    void attach(nextionComponent component, bool event, nextionPointer pointer);
-    void attach(nextionTouch touch, nextionPointer pointer);
+    void attach(nextionComponent component, bool state, nextionOnEvent pointer);
+    void attach(nextionEvent event, nextionOnEvent pointer);
     uint8_t bkcmd(uint8_t mode);
     uint8_t circle(uint16_t x, uint16_t y, uint16_t r, uint16_t c);
     uint8_t clear(uint16_t c = 0xFFFFFF);
@@ -111,8 +112,8 @@ class Nextion {
     uint8_t crop(uint16_t dx, uint16_t dy, uint16_t w, uint16_t h, uint16_t sx, uint16_t sy, uint8_t resource);
     uint8_t delay(uint16_t milliseconds);
     void detach();
-    void detach(nextionComponent component, bool event);
-    void detach(nextionTouch touch);
+    void detach(nextionComponent component, bool state);
+    void detach(nextionEvent event);
     uint8_t disable(uint8_t id);
     uint8_t enable(uint8_t id);
     uint8_t erase(uint8_t id);
@@ -123,6 +124,10 @@ class Nextion {
     uint8_t hide(uint8_t id);
     uint8_t line(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t c);
     int16_t listen();
+    void onChange(nextionOnChange pointer);
+    void onReady(nextionOnPointer pointer);
+    void onStart(nextionOnPointer pointer);
+    void onTouch(nextionOnTouch pointer);
     int16_t page();
     uint8_t page(uint8_t page);
     uint8_t picture(uint16_t x, uint16_t y, uint8_t resource);
@@ -133,20 +138,12 @@ class Nextion {
     uint8_t sendxy(bool state);
     uint8_t show(uint8_t id);
     uint8_t sleep();
-    void target(nextionTarget pointer);
     uint8_t text(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t font, uint16_t foreground, uint16_t background, uint8_t alignX, uint8_t alignY, uint8_t fill, String text);
+    uint8_t waitSerial(uint16_t seconds = 0);
+    uint8_t waitTouch(uint16_t seconds = 0);
     uint8_t wakeup();
     uint8_t wave(uint8_t id, uint8_t channel, uint8_t data);
     uint8_t wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length);
-
-    uint8_t waitSerial(uint16_t seconds = 0) {
-      return print("ussp=" + String(seconds));
-    }
-
-    uint8_t waitTouch(uint16_t seconds = 0) {
-      return print("thsp=" + String(seconds));
-    }
-
 };
 
 #endif
