@@ -30,17 +30,14 @@ enable	KEYWORD2
 erase	KEYWORD2
 fillCircle	KEYWORD2
 fillRectangle	KEYWORD2
-flush	KEYWORD2
 get	KEYWORD2
 hide	KEYWORD2
 line	KEYWORD2
 listen	KEYWORD2
 page	KEYWORD2
 picture	KEYWORD2
-read	KEYWORD2
 reboot	KEYWORD2
 print	KEYWORD2
-println	KEYWORD2
 reboot	KEYWORD2
 rectangle	KEYWORD2
 reply	KEYWORD2
