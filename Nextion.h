@@ -219,6 +219,14 @@ class Nextion {
     uint8_t sleepTouch(uint16_t seconds = 0) {
       return print("thsp=" + String(seconds));
     }
+
+    void r() {
+      for (uint16_t i = 0; i < _length; i++) {
+        Serial.print((unsigned char)_buffer[i], HEX);
+        Serial.print(",");
+      }
+      Serial.println();
+    }
 };
 
 #endif
