@@ -21,6 +21,7 @@ bkcmd	KEYWORD2
 circle	KEYWORD2
 clear	KEYWORD2
 click	KEYWORD2
+content	KEYWORD2
 crop	KEYWORD2
 delay	KEYWORD2
 detach	KEYWORD2
