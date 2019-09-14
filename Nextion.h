@@ -3,7 +3,6 @@
 
 #include <sys/types.h>
 #include <SoftwareSerial.h>
-#include <Arduino.h>
 
 #define NEXTION_BUFFER_SIZE                12
 #define NEXTION_SERIAL_CYCLES              255
@@ -140,11 +139,11 @@ class Nextion {
     uint8_t wave(uint8_t id, uint8_t channel, uint8_t data);
     uint8_t wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length);
 
-    uint8_t sleepSerial(uint16_t seconds = 0) {
+    uint8_t waitSerial(uint16_t seconds = 0) {
       return print("ussp=" + String(seconds));
     }
 
-    uint8_t sleepTouch(uint16_t seconds = 0) {
+    uint8_t waitTouch(uint16_t seconds = 0) {
       return print("thsp=" + String(seconds));
     }
 
