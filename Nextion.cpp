@@ -38,6 +38,10 @@ void Nextion::attach(nextionTouch touch, nextionPointer pointer) {
   } else _callbacks = callback(touch, pointer);
 }
 
+uint8_t Nextion::bkcmd(uint8_t mode) {
+  return print("bkcmd=" + String(mode));
+}
+
 uint8_t Nextion::circle(uint16_t x, uint16_t y, uint16_t r, uint16_t c) {
   return print("cir " + String(x) + "," + String(y) + "," + String(r) + "," + String(c));
 }
@@ -50,12 +54,29 @@ uint8_t Nextion::click(uint8_t id, bool event) {
   return print("click " + String(id) + "," + String(event));
 }
 
+size_t Nextion::content(uint8_t *&buffer) {
+  if (_buffer[0] == NEXTION_CMD_STRING_DATA_ENCLOSED) {
+    buffer = (uint8_t *) malloc(_data.length() - 1);
+    String(char(NEXTION_CMD_STRING_DATA_ENCLOSED) + _data).toCharArray(buffer, _data.length() - 1);
+    return _data.length() - 1;
+
+  } else {
+    buffer = (uint8_t *) malloc(_length - 3);
+    memcpy(buffer, _buffer, _length - 3);
+    return _length - 3;
+  }
+}
+
 uint8_t Nextion::crop(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t resource) {
   return print("picq " + String(x) + "," + String(y) + "," + String(w) + "," + String(h) + "," + String(resource));
 }
 
 uint8_t Nextion::crop(uint16_t dx, uint16_t dy, uint16_t w, uint16_t h, uint16_t sx, uint16_t sy, uint8_t resource) {
   return print("xpic " + String(dx) + "," + String(dy) + "," + String(w) + "," + String(h) + "," + String(sx) + "," + String(sy) + "," + String(resource));
+}
+
+uint8_t Nextion::delay(uint16_t milliseconds) {
+  return print("Delay=" + String(milliseconds));
 }
 
 void Nextion::detach() {
@@ -101,24 +122,19 @@ uint8_t Nextion::fillRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h, u
   return print("fill " + String(x) + "," + String(y) + "," + String(w) + "," + String(h) + "," + String(c));
 }
 
-void Nextion::flush() {
+String Nextion::get(String attribute) {
+  _data = "";
+  _length = NEXTION_BUFFER_SIZE;
   _signal = NEXTION_SERIAL_CYCLES;
   
-  do while (_serial->available()) {
-      _serial->read();
-      _signal = NEXTION_SERIAL_CYCLES;
-    } while (--_signal);
-}
-
-String Nextion::get(String attribute) {
-  println("get " + attribute);
+  while (_length) _buffer[--_length] = 0x00;
+  
+  _serial->print("get " + attribute + char(0xFF) + char(0xFF) + char(0xFF));
   while (!_serial->available());
-
-  _data = "";
+  
   _length = 1;
-  _signal = NEXTION_SERIAL_CYCLES;
 
-  switch (_buffer[0] = char(_serial->read())) {
+  switch (_buffer[0] = uint8_t(_serial->read())) {
 
     case NEXTION_CMD_STRING_DATA_ENCLOSED:
       do while (_serial->available()) {
@@ -129,7 +145,7 @@ String Nextion::get(String attribute) {
 
     case NEXTION_CMD_NUMERIC_DATA_ENCLOSED:
       do while (_serial->available()) {
-          _buffer[_length++] += (unsigned char)(_serial->read());
+          _buffer[_length++] += uint8_t(_serial->read());
           _signal = NEXTION_SERIAL_CYCLES;
         } while (_signal-- && ((_length < 8) || ((_buffer[_length - 1] & _buffer[_length - 2] & _buffer[_length - 3]) != 0xFF)));
       return String((uint32_t(_buffer[4]) << 24) + (uint32_t(_buffer[3]) << 16) + (uint32_t(_buffer[2]) << 8) + uint8_t(_buffer[1]));
@@ -146,43 +162,43 @@ uint8_t Nextion::line(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16
 }
 
 int16_t Nextion::listen() {
-  if ((_serial->available() > 3) && read()) switch (_buffer[0]) {
+  int16_t data = -1;
+
+  if ((_serial->available() > 3) && read())
+    switch (data = int16_t(_buffer[0])) {
 
       case NEXTION_CMD_STARTUP:
-        return uint8_t(_buffer[0]);
+        break;
 
       case NEXTION_CMD_SERIAL_BUFFER_OVERFLOW:
-        return uint8_t(_buffer[0]);
+        break;
 
       case NEXTION_CMD_TOUCH_COORDINATE_AWAKE:
       case NEXTION_CMD_TOUCH_COORDINATE_SLEEP:
         if (_target) _target((uint16_t(_buffer[1]) << 8) | uint8_t(_buffer[2]), (uint16_t(_buffer[3]) << 8) | uint8_t(_buffer[4]), _buffer[5]);
-        return uint8_t(_buffer[0]);
+        break;
 
       case NEXTION_CMD_TOUCH_EVENT: {
           nextionCallback *item = _callbacks;
           while (item) {
             if ((item->touch.page == _buffer[1]) && (item->touch.id == _buffer[2]) && (item->touch.event == _buffer[3]) && (item->pointer)) {
               item->pointer(_buffer[1], _buffer[2], _buffer[2]);
-              return uint8_t(_buffer[0]);
+              break;
             }
             item = item->next;
           }
-          return uint8_t(_buffer[0]);
+          break;
         }
 
       case NEXTION_CMD_AUTO_ENTER_SLEEP:
       case NEXTION_CMD_AUTO_ENTER_WAKEUP:
-        return uint8_t(_buffer[0]);
+        break;
 
       case NEXTION_CMD_READY:
       case NEXTION_CMD_START_MICROSD_UPDATE:
-        return uint8_t(_buffer[0]);
-
-      default:
-        return uint8_t(_buffer[0]);
+        break;
     }
-  return -1;
+  return data;
 }
 
 int16_t Nextion::page() {
@@ -199,13 +215,8 @@ uint8_t Nextion::picture(uint16_t x, uint16_t y, uint8_t resource) {
 }
 
 uint8_t Nextion::print(String data) {
-  println(data);
-  if (read()) return _buffer[0];
-}
-
-void Nextion::println(String data) {
-  flush();
   _serial->print(data + char(0xFF) + char(0xFF) + char(0xFF));
+  if (read()) return _buffer[0];
 }
 
 uint8_t Nextion::read() {
@@ -213,12 +224,12 @@ uint8_t Nextion::read() {
   _length = NEXTION_BUFFER_SIZE;
   _signal = NEXTION_SERIAL_CYCLES;
 
-  while (_length) _buffer[--_length] = char(0x00);
+  while (_length) _buffer[--_length] = 0x00;
+  
   do while (_serial->available()) {
-      _buffer[_length++] += (unsigned char)(_serial->read());
+      _buffer[_length++] += uint8_t(_serial->read());
       _signal = NEXTION_SERIAL_CYCLES;
     } while (_signal-- && ((_length < 4) || ((_buffer[_length - 1] & _buffer[_length - 2] & _buffer[_length - 3]) != 0xFF)));
-  r();
   return _length;
 }
 
@@ -232,6 +243,10 @@ uint8_t Nextion::rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, u
 
 uint8_t Nextion::reply(bool state) {
   return print("thup=" + String(state));
+}
+
+uint8_t Nextion::sendxy(bool state) {
+  return print("sendxy=" + String(state));
 }
 
 uint8_t Nextion::show(uint8_t id) {
