@@ -34,6 +34,7 @@ get	KEYWORD2
 hide	KEYWORD2
 line	KEYWORD2
 listen	KEYWORD2
+onTouch	KEYWORD2
 page	KEYWORD2
 picture	KEYWORD2
 reboot	KEYWORD2
@@ -44,7 +45,6 @@ reply	KEYWORD2
 sendxy	KEYWORD2
 show	KEYWORD2
 sleep	KEYWORD2
-target	KEYWORD2
 text	KEYWORD2
 waitSerial	KEYWORD2
 waitTouch	KEYWORD2
