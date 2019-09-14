@@ -34,6 +34,9 @@ get	KEYWORD2
 hide	KEYWORD2
 line	KEYWORD2
 listen	KEYWORD2
+onChange	KEYWORD2
+onReady	KEYWORD2
+onStart	KEYWORD2
 onTouch	KEYWORD2
 page	KEYWORD2
 picture	KEYWORD2
