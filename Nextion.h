@@ -3,6 +3,7 @@
 
 #include <sys/types.h>
 #include <SoftwareSerial.h>
+#include <Arduino.h>
 
 #define NEXTION_BUFFER_SIZE                12
 #define NEXTION_SERIAL_CYCLES              255
@@ -47,6 +48,15 @@
 #define NEXTION_BKCMD_RETURN_FAILS         2
 #define NEXTION_BKCMD_RETURN_ALL           3
 
+#define NEXTION_COLOR_BLACK                BLACK   //      0
+#define NEXTION_COLOR_BLUE                 BLUE    //     31
+#define NEXTION_COLOR_GREEN                GREEN   //   2016
+#define NEXTION_COLOR_GRAY                 GRAY    //  33840
+#define NEXTION_COLOR_BROWN                BROWN   //  48192
+#define NEXTION_COLOR_RED                  RED     //  63488
+#define NEXTION_COLOR_YELLOW               YELLOW  //  65504
+#define NEXTION_COLOR_WHITE                WHITE   //  65535
+
 struct nextionComponent {
   int8_t page, id;
 };
@@ -58,8 +68,11 @@ struct nextionTouch {
 
 class Nextion {
   protected:
+    unsigned char *_buffer = (unsigned char *) malloc(NEXTION_BUFFER_SIZE);
+    String _data;
+    uint16_t _length = 0;
     SoftwareSerial *_serial;
-    char *buffer = (char *) malloc(NEXTION_BUFFER_SIZE);
+    uint8_t _signal = NEXTION_SERIAL_CYCLES;
 
   private:
     typedef void (*nextionPointer) (uint8_t, uint8_t, bool);
@@ -85,44 +98,127 @@ class Nextion {
   public:
     Nextion(uint8_t rx, uint8_t tx);
     uint32_t begin(uint32_t baud = 0);
+
     void attach();
+    // REMOVE ALL TOUCH EVENTS ATTACHED
+
     void attach(nextionComponent component, bool event, nextionPointer pointer);
+    // ATTACH A TOUCH EVENT
+
     void attach(nextionTouch touch, nextionPointer pointer);
+    // ATTACH A TOUCH EVENT
+
     uint8_t circle(uint16_t x, uint16_t y, uint16_t r, uint16_t c);
+    // DRAW A CIRCLE ON SCREEN
+
     uint8_t clear(uint16_t c = 0xFFFFFF);
+    // CLEAR THE FULL SCREEN TO A COLOR
+
     uint8_t click(uint8_t id, bool event);
+    // EXECUTE A COMPONENT EVENT
+
     uint8_t crop(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t resource);
     uint8_t crop(uint16_t dx, uint16_t dy, uint16_t w, uint16_t h, uint16_t sx, uint16_t sy, uint8_t resource);
+
     void detach();
+    // REMOVE ALL TOUCH EVENTS ATTACHED
+
     void detach(nextionComponent component, bool event);
+    // DETACH A TOUCH EVENT
+
     void detach(nextionTouch touch);
+    // DETACH A TOUCH EVENT
+
     uint8_t disable(uint8_t id);
     uint8_t enable(uint8_t id);
     uint8_t erase(uint8_t id);
     uint8_t erase(uint8_t id, uint8_t channel);
+
     uint8_t fillCircle(uint16_t x, uint16_t y, uint16_t r, uint16_t c);
+    // DRAW A CIRCLE ON SCREEN AND FILL IT
+
     uint8_t fillRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t c);
+    // DRAW A RECTANGLE ON SCREEN AND FILL IT
+
     void flush();
     String get(String attribute);
     uint8_t hide(uint8_t id);
+
     uint8_t line(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t c);
+    // DRAW A LINE ON SCREEN
+
     int16_t listen();
+
     int16_t page();
+    // RETRIEVE CURRENT PAGE ID
+
     uint8_t page(uint8_t page);
+    // CHANGE PAGE
+
+
     uint8_t picture(uint16_t x, uint16_t y, uint8_t resource);
     uint8_t print(String data);
     void println(String data);
     uint8_t read();
+
     uint8_t reboot();
+    // RESET DEVICE
+
     uint8_t rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t c);
+    // DRAW A RECTANGLE ON SCREEN
+
     uint8_t reply(bool state);
+    // WAKEUP ON TOUCH EVENT
+
     uint8_t show(uint8_t id);
+
     uint8_t sleep();
+    // START SLEEP MODE
+
     void target(nextionTarget pointer);
+
     uint8_t text(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t font, uint16_t foreground, uint16_t background, uint8_t alignX, uint8_t alignY, uint8_t fill, String text);
+    // DRAW SOME TEXT ON SCREEN
+
     uint8_t wakeup();
+    // WAKEUP FROM SLEEP MODE
+
     uint8_t wave(uint8_t id, uint8_t channel, uint8_t data);
     uint8_t wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length);
+
+
+    uint8_t bkcmd(uint8_t mode) {
+      return print("bkcmd=" + String(mode));
+    }
+
+    uint16_t content(char *&buffer) {
+      if (_buffer[0] == NEXTION_CMD_STRING_DATA_ENCLOSED) {
+        buffer = (unsigned char *) malloc(_data.length() - 1);
+        String(char(NEXTION_CMD_STRING_DATA_ENCLOSED) + _data).toCharArray(buffer, _data.length() - 1);
+        return _data.length() - 1;
+
+      } else {
+        buffer = (unsigned char *) malloc(_length - 3);
+        memcpy(buffer, _buffer, _length - 3);
+        return _length - 3;
+      }
+    }
+
+    uint8_t delay(uint16_t milliseconds) {
+      return print("Delay=" + String(milliseconds));
+    }
+
+    uint8_t sendxy(bool state) {
+      return print("sendxy=" + String(state));
+    }
+
+    uint8_t sleepSerial(uint16_t seconds = 0) {
+      return print("ussp=" + String(seconds));
+    }
+
+    uint8_t sleepTouch(uint16_t seconds = 0) {
+      return print("thsp=" + String(seconds));
+    }
 };
 
 #endif
