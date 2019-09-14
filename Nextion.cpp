@@ -23,23 +23,31 @@ void Nextion::attach() {
   _callbacks = NULL;
 }
 
-void Nextion::attach(nextionComponent component, bool event, nextionPointer pointer) {
-  attach({component.page, component.id, event}, pointer);
+void Nextion::attach(nextionComponent component, bool state, nextionOnEvent pointer) {
+  attach({component.page, component.id, state}, pointer);
 }
 
-void Nextion::attach(nextionTouch touch, nextionPointer pointer) {
+void Nextion::attach(nextionEvent event, nextionOnEvent pointer) {
   if (_callbacks) {
     nextionCallback *item = _callbacks;
-    do if ((item->touch.page == touch.page) && (item->touch.id == touch.id) && (item->touch.event == touch.event)) {
+    do if ((item->event.page == event.page) && (item->event.id == event.id) && (item->event.state == event.state)) {
         item->pointer = pointer;
         return;
       } while (item->next && (item = item->next));
-    item->next = callback(touch, pointer);
-  } else _callbacks = callback(touch, pointer);
+    item->next = callback(event, pointer);
+  } else _callbacks = callback(event, pointer);
 }
 
 uint8_t Nextion::bkcmd(uint8_t mode) {
   return print("bkcmd=" + String(mode));
+}
+
+Nextion::nextionCallback *Nextion::callback(nextionEvent event, nextionOnEvent pointer) {
+  nextionCallback *item = new nextionCallback;
+  item->next = NULL;
+  item->pointer = pointer;
+  item->event = event;
+  return item;
 }
 
 uint8_t Nextion::circle(uint16_t x, uint16_t y, uint16_t r, uint16_t c) {
@@ -57,8 +65,8 @@ uint8_t Nextion::click(uint8_t id, bool event) {
 size_t Nextion::content(uint8_t *&buffer) {
   if (_buffer[0] == NEXTION_CMD_STRING_DATA_ENCLOSED) {
     buffer = (uint8_t *) malloc(_data.length() - 1);
-    String(char(NEXTION_CMD_STRING_DATA_ENCLOSED) + _data).toCharArray(buffer, _data.length() - 1);
-    return _data.length() - 1;
+    String(char(NEXTION_CMD_STRING_DATA_ENCLOSED) + _data).toCharArray((char *)buffer, _data.length() - 1);
+    return _data.length() - 2;
 
   } else {
     buffer = (uint8_t *) malloc(_length - 3);
@@ -83,14 +91,14 @@ void Nextion::detach() {
   _callbacks = NULL;
 }
 
-void Nextion::detach(nextionComponent component, bool event) {
-  detach({component.page, component.id, event});
+void Nextion::detach(nextionComponent component, bool state) {
+  detach({component.page, component.id, state});
 }
 
-void Nextion::detach(nextionTouch touch) {
+void Nextion::detach(nextionEvent event) {
   if (_callbacks) {
     nextionCallback *item = _callbacks, *preview;
-    do if ((item->touch.page == touch.page) && (item->touch.id == touch.id) && (item->touch.event == touch.event)) {
+    do if ((item->event.page == event.page) && (item->event.id == event.id) && (item->event.state == event.state)) {
         if (item == _callbacks) _callbacks = _callbacks->next;
         else preview->next = ((item->next) ? item->next : NULL);
         return;
@@ -126,12 +134,12 @@ String Nextion::get(String attribute) {
   _data = "";
   _length = NEXTION_BUFFER_SIZE;
   _signal = NEXTION_SERIAL_CYCLES;
-  
+
   while (_length) _buffer[--_length] = 0x00;
-  
+
   _serial->print("get " + attribute + char(0xFF) + char(0xFF) + char(0xFF));
   while (!_serial->available());
-  
+
   _length = 1;
 
   switch (_buffer[0] = uint8_t(_serial->read())) {
@@ -168,6 +176,7 @@ int16_t Nextion::listen() {
     switch (data = int16_t(_buffer[0])) {
 
       case NEXTION_CMD_STARTUP:
+        if (_onStart) _onStart();
         break;
 
       case NEXTION_CMD_SERIAL_BUFFER_OVERFLOW:
@@ -175,13 +184,13 @@ int16_t Nextion::listen() {
 
       case NEXTION_CMD_TOUCH_COORDINATE_AWAKE:
       case NEXTION_CMD_TOUCH_COORDINATE_SLEEP:
-        if (_target) _target((uint16_t(_buffer[1]) << 8) | uint8_t(_buffer[2]), (uint16_t(_buffer[3]) << 8) | uint8_t(_buffer[4]), _buffer[5]);
+        if (_onTouch) _onTouch((uint16_t(_buffer[1]) << 8) | uint8_t(_buffer[2]), (uint16_t(_buffer[3]) << 8) | uint8_t(_buffer[4]), _buffer[5]);
         break;
 
       case NEXTION_CMD_TOUCH_EVENT: {
           nextionCallback *item = _callbacks;
           while (item) {
-            if ((item->touch.page == _buffer[1]) && (item->touch.id == _buffer[2]) && (item->touch.event == _buffer[3]) && (item->pointer)) {
+            if ((item->event.page == _buffer[1]) && (item->event.id == _buffer[2]) && (item->event.state == _buffer[3]) && (item->pointer)) {
               item->pointer(_buffer[1], _buffer[2], _buffer[2]);
               break;
             }
@@ -192,13 +201,33 @@ int16_t Nextion::listen() {
 
       case NEXTION_CMD_AUTO_ENTER_SLEEP:
       case NEXTION_CMD_AUTO_ENTER_WAKEUP:
+        if (_onChange) _onChange(data == NEXTION_CMD_AUTO_ENTER_SLEEP);
         break;
 
       case NEXTION_CMD_READY:
+        if (_onReady) _onReady();
+        break;
+
       case NEXTION_CMD_START_MICROSD_UPDATE:
         break;
     }
   return data;
+}
+
+void Nextion::onChange(nextionOnChange pointer) {
+  _onChange = pointer;
+}
+
+void Nextion::onReady(nextionOnPointer pointer) {
+  _onReady = pointer;
+}
+
+void Nextion::onStart(nextionOnPointer pointer) {
+  _onStart = pointer;
+}
+
+void Nextion::onTouch(nextionOnTouch pointer) {
+  _onTouch = pointer;
 }
 
 int16_t Nextion::page() {
@@ -225,7 +254,7 @@ uint8_t Nextion::read() {
   _signal = NEXTION_SERIAL_CYCLES;
 
   while (_length) _buffer[--_length] = 0x00;
-  
+
   do while (_serial->available()) {
       _buffer[_length++] += uint8_t(_serial->read());
       _signal = NEXTION_SERIAL_CYCLES;
@@ -257,13 +286,17 @@ uint8_t Nextion::sleep() {
   return print("sleep=1");
 }
 
-void Nextion::target(nextionTarget pointer) {
-  _target = pointer;
-}
-
 uint8_t Nextion::text(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t font, uint16_t foreground, uint16_t background, uint8_t alignX, uint8_t alignY, uint8_t fill, String text) {
   return print("xstr " + String(x) + "," + String(y) + "," + String(w) + "," + String(h) + "," +
                String(font) + "," + String(foreground) + "," + String(background) + "," + String(alignX) + "," + String(alignY) + "," + String(fill) + "," + text);
+}
+
+uint8_t Nextion::waitSerial(uint16_t seconds) {
+  return print("ussp=" + String(seconds));
+}
+
+uint8_t Nextion::waitTouch(uint16_t seconds) {
+  return print("thsp=" + String(seconds));
 }
 
 uint8_t Nextion::wakeup() {
