@@ -9,7 +9,7 @@
 Nextion	KEYWORD1
 
 nextionComponent	KEYWORD1
-nextionTouch	KEYWORD1
+nextionEvent	KEYWORD1
 
 ##################################################
 # Methods and Functions			(KEYWORD2)
@@ -121,7 +121,7 @@ NEXTION_COLOR_BLACK	LITERAL1
 # Built-in variables			(LITERAL2)
 ##################################################
 
-event	LITERAL2
 id	LITERAL2
 page	LITERAL2
+state	LITERAL2
 
