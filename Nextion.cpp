@@ -88,7 +88,7 @@ size_t Nextion::content(uint8_t *&buffer) {
   if (!_length || _buffer[0] == NEXTION_CMD_STRING_DATA_ENCLOSED) {
     buffer = (uint8_t *) malloc(_data.length() - 1);
     String((_length ? String(char(NEXTION_CMD_STRING_DATA_ENCLOSED)) : "") + _data).toCharArray((char *)buffer, _data.length() - 1);
-    return _data.length() - 2 - !_length;
+    return bool(_data.length()) * (_data.length() - 2 - !_length);
 
   } else {
     buffer = (uint8_t *) malloc(_length - 3);
@@ -228,8 +228,8 @@ int16_t Nextion::listen() {
               }
               item = item->next;
             }
-            break;
           }
+          break;
 
         case NEXTION_CMD_AUTO_ENTER_SLEEP:
         case NEXTION_CMD_AUTO_ENTER_WAKEUP:
@@ -293,14 +293,15 @@ uint8_t Nextion::read() {
   _signal = NEXTION_SERIAL_CYCLES;
   while (_length) _buffer[--_length] = 0x00;
 
-  do while (_serial->available()) {
+  do if (_serial->available()) {
       uint8_t data = uint8_t(_serial->read());
-      exit = (data == 0xFF) ? exit + 1 : 0;
 
       switch (_buffer[0]) {
 
         case NEXTION_CMD_STRING_DATA_ENCLOSED:
           _data += char(data);
+          _length = 1;
+          exit = (data == 0xFF) ? exit + 1 : 0;
           break;
 
         case NEXTION_CMD_NUMERIC_DATA_ENCLOSED:
@@ -310,11 +311,12 @@ uint8_t Nextion::read() {
 
         default:
           _buffer[_length++] = uint8_t(data);
+          exit = (data == 0xFF) ? exit + 1 : 0;
       }
       _signal = NEXTION_SERIAL_CYCLES;
     } while (_signal-- && (exit != 3));
 
-  return (_buffer[0] == NEXTION_CMD_STRING_DATA_ENCLOSED) ? (_length = 1) : _length;
+  return _length;
 }
 
 uint8_t Nextion::reboot() {
