@@ -9,11 +9,11 @@ uint32_t Nextion::begin(uint32_t baud) {
   uint8_t index = 0;
 
   do _serial->begin(rate[index] * 2400UL);
-  while ((init().indexOf("comok") == -1) && (7 > ++index));
+  while (!init() && (7 > ++index));
 
   if (baud && (print("baud=" + String(baud)) != NEXTION_BKCMD_ASSIGN_FAILED)) {
     _serial->begin(baud);
-    if ((init().indexOf("comok") != -1)) return baud;
+    if (init()) return baud;
     return begin();
   }
 
@@ -64,10 +64,10 @@ uint8_t Nextion::click(uint8_t id, bool event) {
 }
 
 size_t Nextion::content(uint8_t *&buffer) {
-  if (_buffer[0] == NEXTION_CMD_STRING_DATA_ENCLOSED) {
+  if (!_length || _buffer[0] == NEXTION_CMD_STRING_DATA_ENCLOSED) {
     buffer = (uint8_t *) malloc(_data.length() - 1);
-    String(char(NEXTION_CMD_STRING_DATA_ENCLOSED) + _data).toCharArray((char *)buffer, _data.length() - 1);
-    return _data.length() - 2;
+    String((_length ? String(char(NEXTION_CMD_STRING_DATA_ENCLOSED)) : "") + _data).toCharArray((char *)buffer, _data.length() - 1);
+    return _data.length() - 2 - !_length;
 
   } else {
     buffer = (uint8_t *) malloc(_length - 3);
@@ -166,22 +166,21 @@ uint8_t Nextion::hide(uint8_t id) {
   return print("vis " + String(id) + ",0");
 }
 
-String Nextion::init() {
+bool Nextion::init() {
   send("DRAKJHSUYDGBNCJHGJKSHBDNÿÿÿ");
   send("connectÿÿÿ");
   send("ÿÿconnectÿÿÿ");
   send("");
   send("connect");
 
-  String data;
   _signal = NEXTION_SERIAL_CYCLES;
 
   do while (_serial->available()) {
-      data += char(_serial->read());
+      _data += char(_serial->read());
       _signal = NEXTION_SERIAL_CYCLES;
     } while (_signal--);
 
-  return data;
+  return _data.indexOf("comok") != -1;
 }
 
 uint8_t Nextion::line(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t c) {
