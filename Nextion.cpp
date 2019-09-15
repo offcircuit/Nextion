@@ -8,6 +8,9 @@ uint32_t Nextion::begin(uint32_t baud) {
   const uint8_t rate[8] = {1, 2, 4, 8, 16, 24, 48, 0};
   uint8_t index = 0;
 
+  _length = NEXTION_BUFFER_SIZE;
+  while (_length) _buffer[--_length] = 0x00;
+
   do _serial->begin(rate[index] * 2400UL);
   while (!init() && (7 > ++index));
 
@@ -159,9 +162,7 @@ uint8_t Nextion::hide(uint8_t id) {
 
 bool Nextion::init() {
   _data = "";
-  _length = NEXTION_BUFFER_SIZE;
   _signal = NEXTION_SERIAL_CYCLES;
-  while (_length) _buffer[--_length] = 0x00;
 
   send("DRAKJHSUYDGBNCJHGJKSHBDNÿÿÿ");
   send("connectÿÿÿ");
@@ -260,6 +261,7 @@ uint8_t Nextion::picture(uint16_t x, uint16_t y, uint8_t resource) {
 }
 
 uint8_t Nextion::print(String data) {
+  flush();
   send(data);
   if (read()) return _buffer[0];
 }
@@ -269,24 +271,23 @@ uint8_t Nextion::read() {
   _length = NEXTION_BUFFER_SIZE;
   _signal = NEXTION_SERIAL_CYCLES;
   while (_length) _buffer[--_length] = 0x00;
-  while (!_serial->available() && _signal--);
 
-  if (_signal) switch (_buffer[_length++] = uint8_t(_serial->read())) {
+  do while (_serial->available())
+    {
+      switch (_buffer[0]) {
 
-      case NEXTION_CMD_STRING_DATA_ENCLOSED:
-        do while (_serial->available()) {
-            _data += char(_serial->read());
-            _signal = NEXTION_SERIAL_CYCLES;
-          } while (_signal-- && ((_length < 4) || (_data[_data.length() - 1] & _data[_data.length() - 2] & _data[_data.length() - 3]) != 0xFF));
-        break;
+        case NEXTION_CMD_STRING_DATA_ENCLOSED:
+          _data += char(_serial->read());
+          break;
 
-      default:
-        do while (_serial->available()) {
-            _buffer[_length++] = uint8_t(_serial->read());
-            _signal = NEXTION_SERIAL_CYCLES;
-          } while (_signal-- && ((_length < 4) || (_buffer[_length - 1] & _buffer[_length - 2] & _buffer[_length - 3]) != 0xFF));
-    }
-  return _length;
+        default:
+          _buffer[_length] = uint8_t(_serial->read());
+      }
+      _signal = NEXTION_SERIAL_CYCLES;
+      _length++;
+    } while (_signal-- && (_length < 4));
+
+  return (_buffer[0] == NEXTION_CMD_STRING_DATA_ENCLOSED) ? 1 : _length;
 }
 
 uint8_t Nextion::reboot() {
