@@ -1,5 +1,4 @@
 #include "Nextion.h"
-#include "Arduino.h"
 
 Nextion::Nextion(uint8_t rx, uint8_t tx) {
   _serial = new SoftwareSerial(rx, tx);
@@ -12,13 +11,22 @@ uint32_t Nextion::begin(uint32_t baud) {
   do _serial->begin(rate[index] * 2400UL);
   while (!init() && (7 > ++index));
 
-  if (baud) {
-    print("baud=" + String(baud));
-    _serial->begin(baud);
-    if (init()) return baud;
+  if (baud && (baud != rate[index] * 2400UL)) {
+    send("baud=" + String(baud));
+
+    _signal = NEXTION_SERIAL_CYCLES;
+    while (!_serial->available() && _signal--);
+
+    if (_signal) {
+      _buffer[0] = uint8_t(_serial->read());
+      flush();
+      if (_buffer[0] != NEXTION_BKCMD_ASSIGN_FAILED) {
+        _serial->begin(baud);
+        if (init()) return baud;
+      }
+    }
     return begin();
   }
-
   return rate[index] * 2400UL;
 }
 
@@ -150,15 +158,18 @@ uint8_t Nextion::hide(uint8_t id) {
 }
 
 bool Nextion::init() {
-  send("DRAKJHSUYDGBNCJHGJKSHBDNÿÿÿ");
-  send("connectÿÿÿ");
-  send("ÿÿconnectÿÿÿ");
-  send("");
-  send("connect");
-
+  _data = "";
   _length = NEXTION_BUFFER_SIZE;
   _signal = NEXTION_SERIAL_CYCLES;
   while (_length) _buffer[--_length] = 0x00;
+
+  send("DRAKJHSUYDGBNCJHGJKSHBDNÿÿÿ");
+  send("connectÿÿÿ");
+  send("ÿÿconnectÿÿÿ");
+  flush();
+  send("");
+  flush();
+  send("connect");
 
   do while (_serial->available()) {
       _data += char(_serial->read());
@@ -175,42 +186,43 @@ uint8_t Nextion::line(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16
 int16_t Nextion::listen() {
   int16_t data = -1;
 
-  if ((_serial->available() > 3) && read()) switch (data = int16_t(_buffer[0])) {
+  if (_serial->available() > 3)
+    if (read()) switch (data = int16_t(_buffer[0])) {
 
-      case NEXTION_CMD_STARTUP:
-        if (_onStart) _onStart();
-        break;
-
-      case NEXTION_CMD_TOUCH_COORDINATE_AWAKE:
-      case NEXTION_CMD_TOUCH_COORDINATE_SLEEP:
-        if (_onTouch) _onTouch((uint16_t(_buffer[1]) << 8) | uint8_t(_buffer[2]), (uint16_t(_buffer[3]) << 8) | uint8_t(_buffer[4]), _buffer[5]);
-        break;
-
-      case NEXTION_CMD_TOUCH_EVENT: {
-          nextionCallback *item = _callbacks;
-          while (item) {
-            if ((item->event.page == _buffer[1]) && (item->event.id == _buffer[2]) && (item->event.state == _buffer[3]) && (item->pointer)) {
-              item->pointer(_buffer[1], _buffer[2], _buffer[2]);
-              break;
-            }
-            item = item->next;
-          }
+        case NEXTION_CMD_STARTUP:
+          if (_onStart) _onStart();
           break;
-        }
 
-      case NEXTION_CMD_AUTO_ENTER_SLEEP:
-      case NEXTION_CMD_AUTO_ENTER_WAKEUP:
-        if (_onChange) _onChange(data == NEXTION_CMD_AUTO_ENTER_WAKEUP);
-        break;
+        case NEXTION_CMD_TOUCH_COORDINATE_AWAKE:
+        case NEXTION_CMD_TOUCH_COORDINATE_SLEEP:
+          if (_onTouch) _onTouch((uint16_t(_buffer[1]) << 8) | uint8_t(_buffer[2]), (uint16_t(_buffer[3]) << 8) | uint8_t(_buffer[4]), _buffer[5]);
+          break;
 
-      case NEXTION_CMD_READY:
-        if (_onReady) _onReady();
-        break;
+        case NEXTION_CMD_TOUCH_EVENT: {
+            nextionCallback *item = _callbacks;
+            while (item) {
+              if ((item->event.page == _buffer[1]) && (item->event.id == _buffer[2]) && (item->event.state == _buffer[3]) && (item->pointer)) {
+                item->pointer(_buffer[1], _buffer[2], _buffer[2]);
+                break;
+              }
+              item = item->next;
+            }
+            break;
+          }
 
-      case NEXTION_CMD_START_MICROSD_UPDATE:
-        if (_onUpdate) _onUpdate();
-        break;
-    }
+        case NEXTION_CMD_AUTO_ENTER_SLEEP:
+        case NEXTION_CMD_AUTO_ENTER_WAKEUP:
+          if (_onChange) _onChange(data == NEXTION_CMD_AUTO_ENTER_WAKEUP);
+          break;
+
+        case NEXTION_CMD_READY:
+          if (_onReady) _onReady();
+          break;
+
+        case NEXTION_CMD_START_MICROSD_UPDATE:
+          if (_onUpdate) _onUpdate();
+          break;
+      }
   return data;
 }
 
@@ -248,37 +260,33 @@ uint8_t Nextion::picture(uint16_t x, uint16_t y, uint8_t resource) {
 }
 
 uint8_t Nextion::print(String data) {
-  _serial->print(data + char(0xFF) + char(0xFF) + char(0xFF));
+  send(data);
   if (read()) return _buffer[0];
 }
 
 uint8_t Nextion::read() {
+  _data = "";
+  _length = NEXTION_BUFFER_SIZE;
   _signal = NEXTION_SERIAL_CYCLES;
+  while (_length) _buffer[--_length] = 0x00;
   while (!_serial->available() && _signal--);
 
-  if (_signal) {
-    _data = "";
-    _length = NEXTION_BUFFER_SIZE;
-    while (_length) _buffer[--_length] = 0x00;
+  if (_signal) switch (_buffer[_length++] = uint8_t(_serial->read())) {
 
-    switch (_buffer[_length++] = uint8_t(_serial->read())) {
-
-      case NEXTION_CMD_STRING_DATA_ENCLOSED: Serial.println("gsijgg");
+      case NEXTION_CMD_STRING_DATA_ENCLOSED:
         do while (_serial->available()) {
             _data += char(_serial->read());
             _signal = NEXTION_SERIAL_CYCLES;
-          } while (_signal-- && ((_data[_data.length() - 1] & _data[_data.length() - 2] & _data[_data.length() - 3]) != 0xFF));
+          } while (_signal-- && ((_length < 4) || (_data[_data.length() - 1] & _data[_data.length() - 2] & _data[_data.length() - 3]) != 0xFF));
         break;
 
       default:
         do while (_serial->available()) {
-            _buffer[_length++] += uint8_t(_serial->read());
+            _buffer[_length++] = uint8_t(_serial->read());
             _signal = NEXTION_SERIAL_CYCLES;
-          } while (_signal-- && ((_buffer[_length - 1] & _buffer[_length - 2] & _buffer[_length - 3]) != 0xFF));
+          } while (_signal-- && ((_length < 4) || (_buffer[_length - 1] & _buffer[_length - 2] & _buffer[_length - 3]) != 0xFF));
     }
-    return _length;
-  }
-  return 0;
+  return _length;
 }
 
 uint8_t Nextion::reboot() {
@@ -294,13 +302,6 @@ uint8_t Nextion::reply(bool state) {
 }
 
 void Nextion::send(String data) {
-  _signal = NEXTION_SERIAL_CYCLES;
-
-  do while (_serial->available()) {
-      _serial->read();
-      _signal = NEXTION_SERIAL_CYCLES;
-    } while (_signal--);
-
   _serial->print(data + char(0xFF) + char(0xFF) + char(0xFF));
 }
 
