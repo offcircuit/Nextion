@@ -17,7 +17,9 @@ nextionEvent	KEYWORD1
 
 begin	KEYWORD2
 attach	KEYWORD2
+backlight	KEYWORD2
 bkcmd	KEYWORD2
+brush	KEYWORD2
 circle	KEYWORD2
 clear	KEYWORD2
 click	KEYWORD2
@@ -26,6 +28,7 @@ crop	KEYWORD2
 delay	KEYWORD2
 detach	KEYWORD2
 disable	KEYWORD2
+draw	KEYWORD2
 enable	KEYWORD2
 erase	KEYWORD2
 fillCircle	KEYWORD2
@@ -38,6 +41,7 @@ onChange	KEYWORD2
 onReady	KEYWORD2
 onStart	KEYWORD2
 onTouch	KEYWORD2
+onUpdate	KEYWORD2
 page	KEYWORD2
 picture	KEYWORD2
 reboot	KEYWORD2
