@@ -1,158 +1,340 @@
-#ifndef NEXTION_H
-#define NEXTION_H
+#include "Nextion.h"
 
-#include <sys/types.h>
-#include <SoftwareSerial.h>
+Nextion::Nextion(uint8_t rx, uint8_t tx) {
+  _serial = new SoftwareSerial(rx, tx);
+}
 
-#define NEXTION_BUFFER_SIZE                12
-#define NEXTION_SERIAL_CYCLES              255
+uint32_t Nextion::begin(uint32_t baud) {
+  const uint8_t rate[8] = {48, 24, 16, 8, 4, 2, 1, 0};
+  uint8_t index = 0;
 
-#define  NEXTION_EVENT_RELEASE             0
-#define  NEXTION_EVENT_PRESS               1
+  _length = NEXTION_BUFFER_SIZE;
+  while (_length) _buffer[--_length] = 0x00;
 
-#define NEXTION_MODE_SLEEP                 0
-#define NEXTION_MODE_AWAKE                 1
+  do _serial->begin(rate[index] * 2400UL);
+  while (!init() && (7 > ++index));
 
-#define NEXTION_CMD_STARTUP                0x00
-#define NEXTION_CMD_TOUCH_EVENT            0x65
-#define NEXTION_CMD_CURRENT_PAGE           0x66
-#define NEXTION_CMD_TOUCH_COORDINATE_AWAKE 0x67
-#define NEXTION_CMD_TOUCH_COORDINATE_SLEEP 0x68
-#define NEXTION_CMD_STRING_DATA_ENCLOSED   0x70
-#define NEXTION_CMD_NUMERIC_DATA_ENCLOSED  0x71
-#define NEXTION_CMD_AUTO_ENTER_SLEEP       0x86
-#define NEXTION_CMD_AUTO_ENTER_WAKEUP      0x87
-#define NEXTION_CMD_READY                  0x88
-#define NEXTION_CMD_START_MICROSD_UPDATE   0x89
-#define NEXTION_CMD_TRANSPARENT_DATA_END   0xFD
-#define NEXTION_CMD_TRANSPARENT_DATA_READY 0xFE
+  if (baud && (baud != rate[index] * 2400UL)) {
+    send("baud=" + String(baud));
 
-#define NEXTION_BKCMD_INVALID              0x00
-#define NEXTION_BKCMD_SUCCESS              0x01
-#define NEXTION_BKCMD_COMPONENT_INVALID    0x02
-#define NEXTION_BKCMD_PAGE_INVALID         0x03
-#define NEXTION_BKCMD_PICTURE_INVALID      0x04
-#define NEXTION_BKCMD_FONT_INVALID         0x05
-#define NEXTION_BKCMD_BAUD_INVALID         0x11
-#define NEXTION_BKCMD_WAVE_INVALID         0x12
-#define NEXTION_BKCMD_VARIABLE_INVALID     0x1A
-#define NEXTION_BKCMD_OPERATION_INVALID    0x1B
-#define NEXTION_BKCMD_ASSIGN_FAILED        0x1C
-#define NEXTION_BKCMD_EEPROM_FAILED        0x1D
-#define NEXTION_BKCMD_PARAMETER_INVALID    0x1E
-#define NEXTION_BKCMD_IO_FAILED            0x1F
-#define NEXTION_BKCMD_ESCAPE_UNDEFINED     0x20
-#define NEXTION_BKCMD_NAME_TOO_LONG        0x23
+    _signal = NEXTION_SERIAL_CYCLES;
+    while (!_serial->available() && _signal--);
 
-#define NEXTION_BKCMD_RETURN_OFF           0
-#define NEXTION_BKCMD_RETURN_SUCCESS       1
-#define NEXTION_BKCMD_RETURN_FAILS         2
-#define NEXTION_BKCMD_RETURN_ALL           3
-
-#define NEXTION_COLOR_BLACK                BLACK   //      0
-#define NEXTION_COLOR_BLUE                 BLUE    //     31
-#define NEXTION_COLOR_GREEN                GREEN   //   2016
-#define NEXTION_COLOR_GRAY                 GRAY    //  33840
-#define NEXTION_COLOR_BROWN                BROWN   //  48192
-#define NEXTION_COLOR_RED                  RED     //  63488
-#define NEXTION_COLOR_YELLOW               YELLOW  //  65504
-#define NEXTION_COLOR_WHITE                WHITE   //  65535
-
-struct nextionComponent {
-  int8_t page, id;
-};
-
-struct nextionEvent {
-  int8_t page, id;
-  bool state;
-};
-
-class Nextion {
-  protected:
-    uint8_t *_buffer = (uint8_t *) malloc(NEXTION_BUFFER_SIZE);
-    String _data;
-    size_t _length = 0;
-    SoftwareSerial *_serial;
-    uint16_t _signal = NEXTION_SERIAL_CYCLES;
-
-  private:
-    typedef void (*nextionOnChange) (bool);
-    typedef void (*nextionOnEvent) (uint8_t, uint8_t, bool);
-    typedef void (*nextionOnPointer) ();
-    typedef void (*nextionOnTouch) (uint16_t, uint16_t, bool);
-
-    struct nextionCallback {
-      nextionCallback *next;
-      nextionEvent event;
-      nextionOnEvent pointer;
-    };
-
-    nextionCallback *_callbacks;
-    nextionOnChange _onChange;
-    nextionOnPointer _onReady;
-    nextionOnPointer _onStart;
-    nextionOnTouch _onTouch;
-    nextionOnPointer _onUpdate;
-
-    nextionCallback *callback(nextionEvent event, nextionOnEvent pointer);
-    bool init();
-    uint8_t read();
-    void send(String data);
-
-  public:
-    Nextion(uint8_t rx, uint8_t tx);
-    uint32_t begin(uint32_t baud = 0);
-    void attach();
-    void attach(nextionComponent component, bool state, nextionOnEvent pointer);
-    void attach(nextionEvent event, nextionOnEvent pointer);
-    uint8_t bkcmd(uint8_t mode);
-    uint8_t circle(uint16_t x, uint16_t y, uint16_t r, uint16_t c);
-    uint8_t clear(uint16_t c = 0xFFFFFF);
-    uint8_t click(uint8_t id, bool event);
-    size_t content(uint8_t *&buffer);
-    uint8_t crop(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t resource);
-    uint8_t crop(uint16_t dx, uint16_t dy, uint16_t w, uint16_t h, uint16_t sx, uint16_t sy, uint8_t resource);
-    uint8_t delay(uint16_t milliseconds);
-    void detach();
-    void detach(nextionComponent component, bool state);
-    void detach(nextionEvent event);
-    uint8_t disable(uint8_t id);
-    uint8_t enable(uint8_t id);
-    uint8_t erase(uint8_t id);
-    uint8_t erase(uint8_t id, uint8_t channel);
-    uint8_t fillCircle(uint16_t x, uint16_t y, uint16_t r, uint16_t c);
-    uint8_t fillRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t c);
-    String get(String attribute);
-    uint8_t hide(uint8_t id);
-    uint8_t line(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t c);
-    int16_t listen();
-    void onChange(nextionOnChange pointer);
-    void onReady(nextionOnPointer pointer);
-    void onStart(nextionOnPointer pointer);
-    void onTouch(nextionOnTouch pointer);
-    void onUpdate(nextionOnPointer pointer);
-    int16_t page();
-    uint8_t page(uint8_t page);
-    uint8_t picture(uint16_t x, uint16_t y, uint8_t resource);
-    uint8_t print(String data);
-    uint8_t reboot();
-    uint8_t rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t c);
-    uint8_t reply(bool state);
-    uint8_t sendxy(bool state);
-    uint8_t show(uint8_t id);
-    uint8_t sleep();
-    uint8_t text(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t font, uint16_t foreground, uint16_t background, uint8_t alignX, uint8_t alignY, uint8_t fill, String text);
-    uint8_t waitSerial(uint16_t seconds = 0);
-    uint8_t waitTouch(uint16_t seconds = 0);
-    uint8_t wakeup();
-    uint8_t wave(uint8_t id, uint8_t channel, uint8_t data);
-    uint8_t wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length);
-
-    void flush() {
-      _signal = NEXTION_SERIAL_CYCLES;
-      do if (_serial->available()) _serial->readString(); while (_signal--);
+    if (_signal) {
+      _buffer[0] = uint8_t(_serial->read());
+      flush();
+      if (_buffer[0] != NEXTION_BKCMD_ASSIGN_FAILED) {
+        _serial->begin(baud);
+        if (init()) return baud;
+      }
     }
+    return begin();
+  }
+  return rate[index] * 2400UL;
+}
 
-};
+void Nextion::attach() {
+  _callbacks = NULL;
+}
 
-#endif
+void Nextion::attach(nextionComponent component, bool state, nextionOnEvent pointer) {
+  attach({component.page, component.id, state}, pointer);
+}
+
+void Nextion::attach(nextionEvent event, nextionOnEvent pointer) {
+  if (_callbacks) {
+    nextionCallback *item = _callbacks;
+    do if ((item->event.page == event.page) && (item->event.id == event.id) && (item->event.state == event.state)) {
+        item->pointer = pointer;
+        return;
+      } while (item->next && (item = item->next));
+    item->next = callback(event, pointer);
+  } else _callbacks = callback(event, pointer);
+}
+
+uint8_t Nextion::bkcmd(uint8_t mode) {
+  return print("bkcmd=" + String(mode));
+}
+
+Nextion::nextionCallback *Nextion::callback(nextionEvent event, nextionOnEvent pointer) {
+  nextionCallback *item = new nextionCallback;
+  item->next = NULL;
+  item->pointer = pointer;
+  item->event = event;
+  return item;
+}
+
+uint8_t Nextion::circle(uint16_t x, uint16_t y, uint16_t r, uint16_t c) {
+  return print("cir " + String(x) + "," + String(y) + "," + String(r) + "," + String(c));
+}
+
+uint8_t Nextion::clear(uint16_t c) {
+  return print("cls " + String(c));
+}
+
+uint8_t Nextion::click(uint8_t id, bool event) {
+  return print("click " + String(id) + "," + String(event));
+}
+
+size_t Nextion::content(uint8_t *&buffer) {
+  if (!_length || _buffer[0] == NEXTION_CMD_STRING_DATA_ENCLOSED) {
+    buffer = (uint8_t *) malloc(_data.length() - 1);
+    String((_length ? String(char(NEXTION_CMD_STRING_DATA_ENCLOSED)) : "") + _data).toCharArray((char *)buffer, _data.length() - 1);
+    return _data.length() - 2 - !_length;
+
+  } else {
+    buffer = (uint8_t *) malloc(_length - 3);
+    memcpy(buffer, _buffer, _length - 3);
+    return _length - 3;
+  }
+}
+
+uint8_t Nextion::crop(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t resource) {
+  return print("picq " + String(x) + "," + String(y) + "," + String(w) + "," + String(h) + "," + String(resource));
+}
+
+uint8_t Nextion::crop(uint16_t dx, uint16_t dy, uint16_t w, uint16_t h, uint16_t sx, uint16_t sy, uint8_t resource) {
+  return print("xpic " + String(dx) + "," + String(dy) + "," + String(w) + "," + String(h) + "," + String(sx) + "," + String(sy) + "," + String(resource));
+}
+
+uint8_t Nextion::delay(uint16_t milliseconds) {
+  return print("Delay=" + String(milliseconds));
+}
+
+void Nextion::detach() {
+  _callbacks = NULL;
+}
+
+void Nextion::detach(nextionComponent component, bool state) {
+  detach({component.page, component.id, state});
+}
+
+void Nextion::detach(nextionEvent event) {
+  if (_callbacks) {
+    nextionCallback *item = _callbacks, *preview;
+    do if ((item->event.page == event.page) && (item->event.id == event.id) && (item->event.state == event.state)) {
+        if (item == _callbacks) _callbacks = _callbacks->next;
+        else preview->next = ((item->next) ? item->next : NULL);
+        return;
+      } while (item->next && (preview = item) && (item = item->next));
+  }
+}
+
+uint8_t Nextion::disable(uint8_t id) {
+  return print("tsw " + String(id) + ",0");
+}
+
+uint8_t Nextion::enable(uint8_t id) {
+  return print("tsw " + String(id) + ",1");
+}
+
+uint8_t Nextion::erase(uint8_t id) {
+  return print("cle " + String(id) + ",255");
+}
+
+uint8_t Nextion::erase(uint8_t id, uint8_t channel) {
+  return print("cle " + String(id) + "," + String(channel));
+}
+
+uint8_t Nextion::fillCircle(uint16_t x, uint16_t y, uint16_t r, uint16_t c) {
+  return print("cirs " + String(x) + "," + String(y) + "," + String(r) + "," + String(c));
+}
+
+uint8_t Nextion::fillRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t c) {
+  return print("fill " + String(x) + "," + String(y) + "," + String(w) + "," + String(h) + "," + String(c));
+}
+
+String Nextion::get(String attribute) {
+  switch (print("get " + attribute)) {
+
+    case NEXTION_CMD_STRING_DATA_ENCLOSED:
+      return _data.substring(0, _data.length() - 3);
+
+    case NEXTION_CMD_NUMERIC_DATA_ENCLOSED:
+      return String((uint32_t(_buffer[4]) << 24) + (uint32_t(_buffer[3]) << 16) + (uint32_t(_buffer[2]) << 8) + uint8_t(_buffer[1]));
+  }
+  return _data;
+}
+
+uint8_t Nextion::hide(uint8_t id) {
+  return print("vis " + String(id) + ",0");
+}
+
+bool Nextion::init() {
+  _data = "";
+  _signal = NEXTION_SERIAL_CYCLES;
+
+  send("");
+  flush();
+  send("connect");
+
+  do while (_serial->available()) _data += char(_serial->read()); while (_signal--);
+
+  return _data.indexOf("comok") != -1;
+}
+
+uint8_t Nextion::line(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t c) {
+  return print("line " + String(x1) + "," + String(y1) + "," + String(x2) + "," + String(y2) + "," + String(c));
+}
+
+int16_t Nextion::listen() {
+  int16_t data = -1;
+
+  if (_serial->available() > 3)
+    if (read()) switch (data = int16_t(_buffer[0])) {
+
+        case NEXTION_CMD_STARTUP:
+          if (_onStart) _onStart();
+          break;
+
+        case NEXTION_CMD_TOUCH_COORDINATE_AWAKE:
+        case NEXTION_CMD_TOUCH_COORDINATE_SLEEP:
+          if (_onTouch) _onTouch((uint16_t(_buffer[1]) << 8) | uint8_t(_buffer[2]), (uint16_t(_buffer[3]) << 8) | uint8_t(_buffer[4]), _buffer[5]);
+          break;
+
+        case NEXTION_CMD_TOUCH_EVENT: {
+            nextionCallback *item = _callbacks;
+            while (item) {
+              if ((item->event.page == _buffer[1]) && (item->event.id == _buffer[2]) && (item->event.state == _buffer[3]) && (item->pointer)) {
+                item->pointer(_buffer[1], _buffer[2], _buffer[2]);
+                break;
+              }
+              item = item->next;
+            }
+            break;
+          }
+
+        case NEXTION_CMD_AUTO_ENTER_SLEEP:
+        case NEXTION_CMD_AUTO_ENTER_WAKEUP:
+          if (_onChange) _onChange(data == NEXTION_CMD_AUTO_ENTER_WAKEUP);
+          break;
+
+        case NEXTION_CMD_READY:
+          if (_onReady) _onReady();
+          break;
+
+        case NEXTION_CMD_START_MICROSD_UPDATE:
+          if (_onUpdate) _onUpdate();
+          break;
+      }
+  return data;
+}
+
+void Nextion::onChange(nextionOnChange pointer) {
+  _onChange = pointer;
+}
+
+void Nextion::onReady(nextionOnPointer pointer) {
+  _onReady = pointer;
+}
+
+void Nextion::onStart(nextionOnPointer pointer) {
+  _onStart = pointer;
+}
+
+void Nextion::onTouch(nextionOnTouch pointer) {
+  _onTouch = pointer;
+}
+
+void Nextion::onUpdate(nextionOnPointer pointer) {
+  _onUpdate = pointer;
+}
+
+int16_t Nextion::page() {
+  if (print("sendme") == NEXTION_CMD_CURRENT_PAGE) return uint8_t(_buffer[1]);
+  else return -1;
+}
+
+uint8_t Nextion::page(uint8_t page) {
+  return print("page " + String(page));
+}
+
+uint8_t Nextion::picture(uint16_t x, uint16_t y, uint8_t resource) {
+  return print("pic " + String(x) + "," + String(y) + "," + String(resource));
+}
+
+uint8_t Nextion::print(String data) {
+  flush();
+  send(data);
+  if (read()) return _buffer[0];
+}
+
+uint8_t Nextion::read() {
+  _data = "";
+  _length = NEXTION_BUFFER_SIZE;
+  _signal = NEXTION_SERIAL_CYCLES;
+  while (_length) _buffer[--_length] = 0x00;
+
+  do while (_serial->available())
+    {
+      switch (_buffer[0]) {
+
+        case NEXTION_CMD_STRING_DATA_ENCLOSED:
+          _data += char(_serial->read());
+          break;
+
+        default:
+          _buffer[_length] = uint8_t(_serial->read());
+      }
+      _signal = NEXTION_SERIAL_CYCLES;
+      _length++;
+    } while (_signal-- && (_length < 4));
+
+  return (_buffer[0] == NEXTION_CMD_STRING_DATA_ENCLOSED) ? 1 : _length;
+}
+
+uint8_t Nextion::reboot() {
+  return print("rest");
+}
+
+uint8_t Nextion::rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t c) {
+  return print("draw " + String(x1) + "," + String(y1) + "," + String(x2) + "," + String(y2) + "," + String(c));
+}
+
+uint8_t Nextion::reply(bool state) {
+  return print("thup=" + String(state));
+}
+
+void Nextion::send(String data) {
+  _serial->print(data + char(0xFF) + char(0xFF) + char(0xFF));
+}
+
+uint8_t Nextion::sendxy(bool state) {
+  return print("sendxy=" + String(state));
+}
+
+uint8_t Nextion::show(uint8_t id) {
+  return print("vis " + String(id) + ",1");
+}
+
+uint8_t Nextion::sleep() {
+  return print("sleep=1");
+}
+
+uint8_t Nextion::text(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t font, uint16_t foreground, uint16_t background, uint8_t alignX, uint8_t alignY, uint8_t fill, String text) {
+  return print("xstr " + String(x) + "," + String(y) + "," + String(w) + "," + String(h) + "," +
+               String(font) + "," + String(foreground) + "," + String(background) + "," + String(alignX) + "," + String(alignY) + "," + String(fill) + "," + text);
+}
+
+uint8_t Nextion::waitSerial(uint16_t seconds) {
+  return print("ussp=" + String(seconds));
+}
+
+uint8_t Nextion::waitTouch(uint16_t seconds) {
+  return print("thsp=" + String(seconds));
+}
+
+uint8_t Nextion::wakeup() {
+  return print("sleep=0");
+}
+
+uint8_t Nextion::wave(uint8_t id, uint8_t channel, uint8_t data) {
+  return print("add " + String(id) + "," + String(channel) + "," + String(data));
+}
+
+uint8_t Nextion::wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length) {
+  if (print("addt " + String(id) + "," + String(channel) + "," + String(length)) == NEXTION_CMD_TRANSPARENT_DATA_READY) {
+    for (size_t i = 0; i < length;) _serial->write(data[i++]);
+  }
+  return read();
+}
