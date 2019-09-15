@@ -73,7 +73,7 @@ class Nextion {
     String _data;
     size_t _length = 0;
     SoftwareSerial *_serial;
-    uint8_t _signal = NEXTION_SERIAL_CYCLES;
+    uint16_t _signal = NEXTION_SERIAL_CYCLES;
 
   private:
     typedef void (*nextionOnChange) (bool);
@@ -147,6 +147,16 @@ class Nextion {
     uint8_t wakeup();
     uint8_t wave(uint8_t id, uint8_t channel, uint8_t data);
     uint8_t wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length);
+
+    bool flush() {
+      _signal = NEXTION_SERIAL_CYCLES;
+      do while (_serial->available()) {
+          _serial->read();
+          _signal = NEXTION_SERIAL_CYCLES;
+        } while (_signal--);
+      return true;
+    }
+
 };
 
 #endif
