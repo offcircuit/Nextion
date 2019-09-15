@@ -12,7 +12,8 @@ uint32_t Nextion::begin(uint32_t baud) {
   do _serial->begin(rate[index] * 2400UL);
   while (!init() && (7 > ++index));
 
-  if (baud && (print("baud=" + String(baud)) != NEXTION_BKCMD_ASSIGN_FAILED)) {
+  if (baud) {
+    print("baud=" + String(baud));
     _serial->begin(baud);
     if (init()) return baud;
     return begin();
@@ -155,7 +156,9 @@ bool Nextion::init() {
   send("");
   send("connect");
 
+  _length = NEXTION_BUFFER_SIZE;
   _signal = NEXTION_SERIAL_CYCLES;
+  while (_length) _buffer[--_length] = 0x00;
 
   do while (_serial->available()) {
       _data += char(_serial->read());
@@ -251,13 +254,11 @@ uint8_t Nextion::print(String data) {
 
 uint8_t Nextion::read() {
   _signal = NEXTION_SERIAL_CYCLES;
-  
   while (!_serial->available() && _signal--);
 
   if (_signal) {
     _data = "";
     _length = NEXTION_BUFFER_SIZE;
-    
     while (_length) _buffer[--_length] = 0x00;
 
     switch (_buffer[_length++] = uint8_t(_serial->read())) {
@@ -266,14 +267,14 @@ uint8_t Nextion::read() {
         do while (_serial->available()) {
             _data += char(_serial->read());
             _signal = NEXTION_SERIAL_CYCLES;
-          } while (_signal-- && (((_data[_data.length() - 1] & _data[_data.length() - 2] & _data[_data.length() - 3]) != 0xFF)));
+          } while (_signal-- && ((_data[_data.length() - 1] & _data[_data.length() - 2] & _data[_data.length() - 3]) != 0xFF));
         break;
 
       default:
         do while (_serial->available()) {
             _buffer[_length++] += uint8_t(_serial->read());
             _signal = NEXTION_SERIAL_CYCLES;
-          } while (_signal-- && ((_length < 8) || ((_buffer[_length - 1] & _buffer[_length - 2] & _buffer[_length - 3]) != 0xFF)));
+          } while (_signal-- && ((_buffer[_length - 1] & _buffer[_length - 2] & _buffer[_length - 3]) != 0xFF));
     }
     return _length;
   }
