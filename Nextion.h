@@ -106,7 +106,9 @@ class Nextion {
     void attach();
     void attach(nextionComponent component, bool state, nextionOnEvent pointer);
     void attach(nextionEvent event, nextionOnEvent pointer);
+    uint8_t backlight(uint8_t value);
     uint8_t bkcmd(uint8_t mode);
+    uint8_t brush(uint16_t color);
     uint8_t circle(uint16_t x, uint16_t y, uint16_t r, uint16_t c);
     uint8_t clear(uint16_t c = 0xFFFFFF);
     uint8_t click(uint8_t id, bool event);
@@ -118,6 +120,7 @@ class Nextion {
     void detach(nextionComponent component, bool state);
     void detach(nextionEvent event);
     uint8_t disable(uint8_t id);
+    uint8_t draw(bool state);
     uint8_t enable(uint8_t id);
     uint8_t erase(uint8_t id);
     uint8_t erase(uint8_t id, uint8_t channel);
