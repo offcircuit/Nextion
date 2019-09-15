@@ -144,6 +144,14 @@ uint8_t Nextion::fillRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h, u
   return print("fill " + String(x) + "," + String(y) + "," + String(w) + "," + String(h) + "," + String(c));
 }
 
+void Nextion::flush() {
+  _signal = NEXTION_SERIAL_CYCLES;
+  do while (_serial->available()) {
+      _serial->read();
+      _signal = NEXTION_SERIAL_CYCLES;
+    } while (_signal--);
+}
+
 String Nextion::get(String data) {
   switch (print("get " + data)) {
 
@@ -224,7 +232,6 @@ int16_t Nextion::listen() {
           if (_onUpdate) _onUpdate();
           break;
       }
-
   return data;
 }
 
@@ -262,11 +269,9 @@ uint8_t Nextion::picture(uint16_t x, uint16_t y, uint8_t resource) {
 }
 
 uint8_t Nextion::print(String data) {
-  Serial.println(data);
   flush();
   send(data);
   if (read()) return _buffer[0];
-  return 0;
 }
 
 uint8_t Nextion::read() {
@@ -287,18 +292,17 @@ uint8_t Nextion::read() {
           break;
 
         case NEXTION_CMD_NUMERIC_DATA_ENCLOSED:
-          _buffer[_length] = uint8_t(data);
+          _buffer[_length++] = uint8_t(data);
           exit = _length == 8 * 3;
           break;
 
         default:
-          _buffer[_length] = uint8_t(data);
+          _buffer[_length++] = uint8_t(data);
       }
       _signal = NEXTION_SERIAL_CYCLES;
-      _length++;
     } while (_signal-- && (exit != 3));
 
-  return (_buffer[0] == NEXTION_CMD_STRING_DATA_ENCLOSED) ? 1 : _length;
+  return (_buffer[0] == NEXTION_CMD_STRING_DATA_ENCLOSED) ? (_length = 1) : _length;
 }
 
 uint8_t Nextion::reboot() {
@@ -354,5 +358,5 @@ uint8_t Nextion::wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length)
   if (print("addt " + String(id) + "," + String(channel) + "," + String(length)) == NEXTION_CMD_TRANSPARENT_DATA_READY) {
     for (size_t i = 0; i < length;) _serial->write(data[i++]);
   }
-  return read();
+  if (read()) return _buffer[0];
 }
