@@ -9,11 +9,12 @@ uint32_t Nextion::begin(uint32_t baud) {
   uint8_t index = 0;
 
   do _serial->begin(rate[index] * 2400UL);
-  while (!print("connect") && (7 > ++index));
+  while ((init().indexOf("comok") == -1) && (7 > ++index));
 
-  if (baud && print("baud=" + String(baud)) != NEXTION_BKCMD_ASSIGN_FAILED) {
+  if (baud && (print("baud=" + String(baud)) != NEXTION_BKCMD_ASSIGN_FAILED)) {
     _serial->begin(baud);
-    return baud;
+    if ((init().indexOf("comok") != -1)) return baud;
+    return begin();
   }
 
   return rate[index] * 2400UL;
@@ -165,6 +166,24 @@ uint8_t Nextion::hide(uint8_t id) {
   return print("vis " + String(id) + ",0");
 }
 
+String Nextion::init() {
+  send("DRAKJHSUYDGBNCJHGJKSHBDNÿÿÿ");
+  send("connectÿÿÿ");
+  send("ÿÿconnectÿÿÿ");
+  send("");
+  send("connect");
+
+  String data;
+  _signal = NEXTION_SERIAL_CYCLES;
+
+  do while (_serial->available()) {
+      data += char(_serial->read());
+      _signal = NEXTION_SERIAL_CYCLES;
+    } while (_signal--);
+
+  return data;
+}
+
 uint8_t Nextion::line(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t c) {
   return print("line " + String(x1) + "," + String(y1) + "," + String(x2) + "," + String(y2) + "," + String(c));
 }
@@ -272,6 +291,17 @@ uint8_t Nextion::rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, u
 
 uint8_t Nextion::reply(bool state) {
   return print("thup=" + String(state));
+}
+
+void Nextion::send(String data) {
+  _signal = NEXTION_SERIAL_CYCLES;
+
+  do while (_serial->available()) {
+      _serial->read();
+      _signal = NEXTION_SERIAL_CYCLES;
+    } while (_signal--);
+
+  _serial->print(data + char(0xFF) + char(0xFF) + char(0xFF));
 }
 
 uint8_t Nextion::sendxy(bool state) {
