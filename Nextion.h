@@ -95,7 +95,9 @@ class Nextion {
     nextionOnTouch _onTouch;
 
     nextionCallback *callback(nextionEvent event, nextionOnEvent pointer);
+    String init();
     uint8_t read();
+    void send(String data);
 
   public:
     Nextion(uint8_t rx, uint8_t tx);
