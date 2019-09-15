@@ -4,7 +4,7 @@
 #include <sys/types.h>
 #include <SoftwareSerial.h>
 
-#define NEXTION_BUFFER_SIZE                12
+#define NEXTION_BUFFER_SIZE                10
 #define NEXTION_SERIAL_CYCLES              255
 
 #define  NEXTION_EVENT_RELEASE             0
