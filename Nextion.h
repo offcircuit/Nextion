@@ -10,11 +10,10 @@
 #define  NEXTION_EVENT_RELEASE             0
 #define  NEXTION_EVENT_PRESS               1
 
-#define NEXTION_MODE_AWAKE                 0
-#define NEXTION_MODE_SLEEP                 1
+#define NEXTION_MODE_SLEEP                 0
+#define NEXTION_MODE_AWAKE                 1
 
 #define NEXTION_CMD_STARTUP                0x00
-#define NEXTION_CMD_SERIAL_BUFFER_OVERFLOW 0x24
 #define NEXTION_CMD_TOUCH_EVENT            0x65
 #define NEXTION_CMD_CURRENT_PAGE           0x66
 #define NEXTION_CMD_TOUCH_COORDINATE_AWAKE 0x67
@@ -93,6 +92,7 @@ class Nextion {
     nextionOnPointer _onReady;
     nextionOnPointer _onStart;
     nextionOnTouch _onTouch;
+    nextionOnPointer _onUpdate;
 
     nextionCallback *callback(nextionEvent event, nextionOnEvent pointer);
     bool init();
@@ -130,6 +130,7 @@ class Nextion {
     void onReady(nextionOnPointer pointer);
     void onStart(nextionOnPointer pointer);
     void onTouch(nextionOnTouch pointer);
+    void onUpdate(nextionOnPointer pointer);
     int16_t page();
     uint8_t page(uint8_t page);
     uint8_t picture(uint16_t x, uint16_t y, uint8_t resource);
