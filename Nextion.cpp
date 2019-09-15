@@ -52,8 +52,16 @@ void Nextion::attach(nextionEvent event, nextionOnEvent pointer) {
   } else _callbacks = callback(event, pointer);
 }
 
+uint8_t Nextion::backlight(uint8_t value) {
+  return print("dim=" + String(value));
+}
+
 uint8_t Nextion::bkcmd(uint8_t mode) {
   return print("bkcmd=" + String(mode));
+}
+
+uint8_t Nextion::brush(uint16_t color) {
+  return print("thc=" + String(color));
 }
 
 Nextion::nextionCallback *Nextion::callback(nextionEvent event, nextionOnEvent pointer) {
@@ -122,6 +130,10 @@ void Nextion::detach(nextionEvent event) {
 
 uint8_t Nextion::disable(uint8_t id) {
   return print("tsw " + String(id) + ",0");
+}
+
+uint8_t Nextion::draw(bool state) {
+  return print("thdra=" + String(state));
 }
 
 uint8_t Nextion::enable(uint8_t id) {
