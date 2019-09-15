@@ -144,16 +144,20 @@ uint8_t Nextion::fillRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h, u
   return print("fill " + String(x) + "," + String(y) + "," + String(w) + "," + String(h) + "," + String(c));
 }
 
-String Nextion::get(String attribute) {
-  switch (print("get " + attribute)) {
+String Nextion::get(String data) {
+  switch (print("get " + data)) {
 
-    case NEXTION_CMD_STRING_DATA_ENCLOSED:
-      return _data.substring(0, _data.length() - 3);
+    case NEXTION_CMD_STRING_DATA_ENCLOSED: {
+        return _data.substring(0, _data.length() - 3);
+      }
+      break;
 
-    case NEXTION_CMD_NUMERIC_DATA_ENCLOSED:
-      return String((uint32_t(_buffer[4]) << 24) + (uint32_t(_buffer[3]) << 16) + (uint32_t(_buffer[2]) << 8) + uint8_t(_buffer[1]));
+    case NEXTION_CMD_NUMERIC_DATA_ENCLOSED: {
+        return String((uint32_t(_buffer[4]) << 24) + (uint32_t(_buffer[3]) << 16) + (uint32_t(_buffer[2]) << 8) + uint8_t(_buffer[1]));
+      }
+      break;
   }
-  return _data;
+  return String(_buffer[0]);
 }
 
 uint8_t Nextion::hide(uint8_t id) {
@@ -168,7 +172,10 @@ bool Nextion::init() {
   flush();
   send("connect");
 
-  do while (_serial->available()) _data += char(_serial->read()); while (_signal--);
+  do while (_serial->available()) {
+      _data += char(_serial->read());
+      _signal = NEXTION_SERIAL_CYCLES;;
+    } while (_signal--);
 
   return _data.indexOf("comok") != -1;
 }
@@ -217,6 +224,7 @@ int16_t Nextion::listen() {
           if (_onUpdate) _onUpdate();
           break;
       }
+
   return data;
 }
 
@@ -254,31 +262,41 @@ uint8_t Nextion::picture(uint16_t x, uint16_t y, uint8_t resource) {
 }
 
 uint8_t Nextion::print(String data) {
+  Serial.println(data);
   flush();
   send(data);
   if (read()) return _buffer[0];
+  return 0;
 }
 
 uint8_t Nextion::read() {
+  uint8_t exit = 0;
   _data = "";
   _length = NEXTION_BUFFER_SIZE;
   _signal = NEXTION_SERIAL_CYCLES;
   while (_length) _buffer[--_length] = 0x00;
 
-  do while (_serial->available())
-    {
+  do while (_serial->available()) {
+      uint8_t data = uint8_t(_serial->read());
+      exit = (data == 0xFF) ? exit + 1 : 0;
+
       switch (_buffer[0]) {
 
         case NEXTION_CMD_STRING_DATA_ENCLOSED:
-          _data += char(_serial->read());
+          _data += char(data);
+          break;
+
+        case NEXTION_CMD_NUMERIC_DATA_ENCLOSED:
+          _buffer[_length] = uint8_t(data);
+          exit = _length == 8 * 3;
           break;
 
         default:
-          _buffer[_length] = uint8_t(_serial->read());
+          _buffer[_length] = uint8_t(data);
       }
       _signal = NEXTION_SERIAL_CYCLES;
       _length++;
-    } while (_signal-- && (_length < 4));
+    } while (_signal-- && (exit != 3));
 
   return (_buffer[0] == NEXTION_CMD_STRING_DATA_ENCLOSED) ? 1 : _length;
 }
