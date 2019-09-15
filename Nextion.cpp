@@ -5,7 +5,7 @@ Nextion::Nextion(uint8_t rx, uint8_t tx) {
 }
 
 uint32_t Nextion::begin(uint32_t baud) {
-  const uint8_t rate[8] = {1, 2, 4, 8, 16, 24, 48, 0};
+  const uint8_t rate[8] = {48, 24, 16, 8, 4, 2, 1, 0};
   uint8_t index = 0;
 
   _length = NEXTION_BUFFER_SIZE;
@@ -164,18 +164,11 @@ bool Nextion::init() {
   _data = "";
   _signal = NEXTION_SERIAL_CYCLES;
 
-  send("DRAKJHSUYDGBNCJHGJKSHBDNÿÿÿ");
-  send("connectÿÿÿ");
-  send("ÿÿconnectÿÿÿ");
-  flush();
   send("");
   flush();
   send("connect");
 
-  do while (_serial->available()) {
-      _data += char(_serial->read());
-      _signal = NEXTION_SERIAL_CYCLES;
-    } while (_signal--);
+  do while (_serial->available()) _data += char(_serial->read()); while (_signal--);
 
   return _data.indexOf("comok") != -1;
 }
