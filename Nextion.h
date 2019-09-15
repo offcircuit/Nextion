@@ -96,6 +96,7 @@ class Nextion {
 
     nextionCallback *callback(nextionEvent event, nextionOnEvent pointer);
     bool init();
+    void flush();
     uint8_t read();
     void send(String data);
 
@@ -122,7 +123,7 @@ class Nextion {
     uint8_t erase(uint8_t id, uint8_t channel);
     uint8_t fillCircle(uint16_t x, uint16_t y, uint16_t r, uint16_t c);
     uint8_t fillRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t c);
-    String get(String attribute);
+    String get(String data);
     uint8_t hide(uint8_t id);
     uint8_t line(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t c);
     int16_t listen();
@@ -147,16 +148,6 @@ class Nextion {
     uint8_t wakeup();
     uint8_t wave(uint8_t id, uint8_t channel, uint8_t data);
     uint8_t wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length);
-
-    bool flush() {
-      _signal = NEXTION_SERIAL_CYCLES;
-      do while (_serial->available()) {
-          _serial->read();
-          _signal = NEXTION_SERIAL_CYCLES;
-        } while (_signal--);
-      return true;
-    }
-
 };
 
 #endif
