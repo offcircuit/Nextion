@@ -46,9 +46,9 @@ page	KEYWORD2
 picture	KEYWORD2
 reboot	KEYWORD2
 print	KEYWORD2
-reboot	KEYWORD2
 rectangle	KEYWORD2
 reply	KEYWORD2
+reset	KEYWORD2
 sendxy	KEYWORD2
 show	KEYWORD2
 sleep	KEYWORD2
