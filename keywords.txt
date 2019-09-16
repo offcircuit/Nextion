@@ -18,6 +18,7 @@ nextionEvent	KEYWORD1
 begin	KEYWORD2
 attach	KEYWORD2
 backlight	KEYWORD2
+baud	KEYWORD2
 bkcmd	KEYWORD2
 brush	KEYWORD2
 circle	KEYWORD2
