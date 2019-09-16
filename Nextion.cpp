@@ -60,8 +60,8 @@ uint8_t Nextion::bkcmd(uint8_t mode) {
   return print("bkcmd=" + String(mode));
 }
 
-uint8_t Nextion::brush(uint16_t color) {
-  return print("thc=" + String(color));
+uint8_t Nextion::brush(uint16_t c) {
+  return print("thc=" + String(c));
 }
 
 Nextion::nextionCallback *Nextion::callback(nextionEvent event, nextionOnEvent pointer) {
@@ -165,17 +165,14 @@ void Nextion::flush() {
 }
 
 String Nextion::get(String data) {
+  
   switch (print("get " + data)) {
 
-    case NEXTION_CMD_STRING_DATA_ENCLOSED: {
-        return _data.substring(0, _data.length() - 3);
-      }
-      break;
+    case NEXTION_CMD_STRING_DATA_ENCLOSED:
+      return _data.substring(0, _data.length() - 3);
 
-    case NEXTION_CMD_NUMERIC_DATA_ENCLOSED: {
-        return String((uint32_t(_buffer[4]) << 24) + (uint32_t(_buffer[3]) << 16) + (uint32_t(_buffer[2]) << 8) + uint8_t(_buffer[1]));
-      }
-      break;
+    case NEXTION_CMD_NUMERIC_DATA_ENCLOSED:
+      return String((uint32_t(_buffer[4]) << 24) + (uint32_t(_buffer[3]) << 16) + (uint32_t(_buffer[2]) << 8) + uint8_t(_buffer[1]));
   }
   return String(_buffer[0]);
 }
@@ -205,11 +202,12 @@ uint8_t Nextion::line(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16
 }
 
 int16_t Nextion::listen() {
-  int16_t data = -1;
-
   if (_serial->available() > 3)
-    if (read()) switch (data = int16_t(_buffer[0])) {
+    if (read()) {
 
+      uint16_t data = int16_t(_buffer[0]);
+      switch (data) {
+        
         case NEXTION_CMD_STARTUP:
           if (_onStart) _onStart();
           break;
@@ -233,7 +231,7 @@ int16_t Nextion::listen() {
 
         case NEXTION_CMD_AUTO_ENTER_SLEEP:
         case NEXTION_CMD_AUTO_ENTER_WAKEUP:
-          if (_onChange) _onChange(data == NEXTION_CMD_AUTO_ENTER_WAKEUP);
+          if (_onChange) _onChange(_buffer[0] == NEXTION_CMD_AUTO_ENTER_WAKEUP);
           break;
 
         case NEXTION_CMD_READY:
@@ -244,7 +242,9 @@ int16_t Nextion::listen() {
           if (_onUpdate) _onUpdate();
           break;
       }
-  return data;
+      return data;
+    }
+  return -1;
 }
 
 void Nextion::onChange(nextionOnChange pointer) {
@@ -306,7 +306,7 @@ uint8_t Nextion::read() {
 
         case NEXTION_CMD_NUMERIC_DATA_ENCLOSED:
           _buffer[_length++] = uint8_t(data);
-          exit = _length == 8 * 3;
+          exit = (_length == 8) * 3;
           break;
 
         default:
@@ -369,8 +369,7 @@ uint8_t Nextion::wave(uint8_t id, uint8_t channel, uint8_t data) {
 }
 
 uint8_t Nextion::wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length) {
-  if (print("addt " + String(id) + "," + String(channel) + "," + String(length)) == NEXTION_CMD_TRANSPARENT_DATA_READY) {
+  if (print("addt " + String(id) + "," + String(channel) + "," + String(length)) == NEXTION_CMD_TRANSPARENT_DATA_READY)
     for (size_t i = 0; i < length;) _serial->write(data[i++]);
-  }
   if (read()) return _buffer[0];
 }
