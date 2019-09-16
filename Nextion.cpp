@@ -9,7 +9,7 @@ uint32_t Nextion::begin(uint32_t baud, bool mode) {
   uint8_t index = 0;
 
   do _serial->begin(rate[index] * 2400UL);
-  while (!init() && (7 > ++index));
+  while (!init(mode) && (7 > ++index));
 
   if (baud && (baud != rate[index] * 2400UL)) {
     send("baud=" + String(baud));
@@ -22,7 +22,7 @@ uint32_t Nextion::begin(uint32_t baud, bool mode) {
       flush();
       if (_buffer[0] != NEXTION_BKCMD_ASSIGN_FAILED) {
         _serial->begin(baud);
-        if (init()) return baud;
+        if (init(mode)) return baud;
       }
     }
     return begin();
