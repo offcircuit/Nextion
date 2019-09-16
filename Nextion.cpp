@@ -9,7 +9,7 @@ uint32_t Nextion::begin(uint32_t rate) {
   uint8_t index = 0;
 
   do _serial->begin(map[index] * 2400UL);
-  while (!init() && (7 > ++index));
+  while (!connect() && (7 > ++index));
 
   if (rate && (rate != map[index] * 2400UL)) {
     if (baud(rate)) return rate;
@@ -46,7 +46,7 @@ bool Nextion::baud(uint32_t rate, bool mode) {
   flush();
   send("baud=" + String(rate));
 
-  clearData();
+  restore();
   while (!_serial->available() && _signal--);
 
   if (_signal) {
@@ -54,7 +54,7 @@ bool Nextion::baud(uint32_t rate, bool mode) {
     flush();
     if (_buffer[0] != NEXTION_BKCMD_ASSIGN_FAILED) {
       _serial->begin(rate);
-      return init(mode);
+      return connect(mode);
     }
   }
 }
@@ -83,15 +83,24 @@ uint8_t Nextion::clear(uint16_t c) {
   return print("cls " + String(c));
 }
 
-void Nextion::clearData() {
-  _data = "";
-  _length = NEXTION_BUFFER_SIZE;
-  _signal = NEXTION_SERIAL_CYCLES;
-  while (_length) _buffer[--_length] = 0x00;
-}
-
 uint8_t Nextion::click(uint8_t id, bool event) {
   return print("click " + String(id) + "," + String(event));
+}
+
+bool Nextion::connect(bool mode) {
+  flush();
+  if (mode) {
+    send("DRAKJHSUYDGBNCJHGJKSHBDN");
+    send("connect");
+    send(String(char(0xFF) + char(0xFF)) + "connect");
+    flush();
+  }
+
+  send("");
+  flush();
+  send("connect");
+
+  if (readln()) return _data.indexOf("comok") != -1;
 }
 
 size_t Nextion::content(uint8_t *&buffer) {
@@ -180,7 +189,6 @@ void Nextion::flush() {
 }
 
 String Nextion::get(String data) {
-
   switch (print("get " + data)) {
 
     case NEXTION_CMD_STRING_DATA_ENCLOSED:
@@ -196,22 +204,6 @@ uint8_t Nextion::hide(uint8_t id) {
   return print("vis " + String(id) + ",0");
 }
 
-bool Nextion::init(bool mode) {
-  flush();
-  if (mode) {
-    send("DRAKJHSUYDGBNCJHGJKSHBDN");
-    send("connect");
-    send(String(char(0xFF)) + String(char(0xFF)) + "connect");
-    flush();
-  }
-
-  send("");
-  flush();
-  send("connect");
-
-  if (readln()) return _data.indexOf("comok") != -1;
-}
-
 uint8_t Nextion::line(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t c) {
   return print("line " + String(x1) + "," + String(y1) + "," + String(x2) + "," + String(y2) + "," + String(c));
 }
@@ -219,7 +211,6 @@ uint8_t Nextion::line(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16
 int16_t Nextion::listen() {
   if (_serial->available() > 3)
     if (read()) {
-
       uint16_t data = int16_t(_buffer[0]);
       switch (data) {
 
@@ -303,8 +294,7 @@ uint8_t Nextion::print(String data) {
 
 uint8_t Nextion::read() {
   uint8_t exit = 0;
-
-  clearData();
+  restore();
   do if (_serial->available()) {
       uint8_t data = uint8_t(_serial->read());
       _signal = NEXTION_SERIAL_CYCLES;
@@ -331,7 +321,7 @@ uint8_t Nextion::read() {
 }
 
 uint8_t Nextion::readln() {
-  clearData();
+  restore();
   do while (_serial->available()) {
       _data += char(_serial->read());
       _signal = NEXTION_SERIAL_CYCLES;;
@@ -349,6 +339,12 @@ uint8_t Nextion::reply(bool state) {
 
 uint8_t Nextion::reset() {
   return print("rest");
+}
+
+void Nextion::restore() {
+  _data = "";
+  _length = 0;
+  _signal = NEXTION_SERIAL_CYCLES;
 }
 
 void Nextion::send(String data) {
