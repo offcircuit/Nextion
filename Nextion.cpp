@@ -110,17 +110,17 @@ bool Nextion::connect(bool mode) {
 }
 
 size_t Nextion::content(uint8_t *&buffer) {
-  if (!_length) {
-    buffer = (uint8_t *) malloc(_data.length() + 1);
-    String(_data).toCharArray((char *)buffer, _data.length() + 1);
-    return _data.length();
-
-  }  else if (_buffer[0] == NEXTION_CMD_STRING_DATA_ENCLOSED) {
+  if (_buffer[0] == NEXTION_CMD_STRING_DATA_ENCLOSED) {
     buffer = (uint8_t *) malloc(_data.length() + 2);
     String(String(char(NEXTION_CMD_STRING_DATA_ENCLOSED)) + _data).toCharArray((char *)buffer, _data.length() + 2);
     return _data.length() + 1;
 
-  } else {
+  }  else if (_data.length()) {
+    buffer = (uint8_t *) malloc(_data.length() + 1);
+    String(_data).toCharArray((char *)buffer, _data.length() + 1);
+    return _data.length();
+
+  } else  {
     buffer = (uint8_t *) malloc(_length);
     memcpy(buffer, _buffer, _length);
     return _length;
@@ -349,8 +349,9 @@ uint8_t Nextion::reset() {
 
 void Nextion::restore() {
   _data = "";
-  _length = 0;
+  _length = NEXTION_BUFFER_SIZE;
   _signal = NEXTION_SERIAL_CYCLES;
+  _buffer[0] = 0x00;
 }
 
 void Nextion::send(String data) {
