@@ -56,6 +56,7 @@ text	KEYWORD2
 waitSerial	KEYWORD2
 waitTouch	KEYWORD2
 wakeup	KEYWORD2
+wakeupPage	KEYWORD2
 wave	KEYWORD2
 
 ##################################################
