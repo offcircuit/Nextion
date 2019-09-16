@@ -3,12 +3,13 @@
 
 #include <sys/types.h>
 #include <SoftwareSerial.h>
+#include <Arduino.h>
 
 #define NEXTION_BUFFER_SIZE                10
 #define NEXTION_SERIAL_CYCLES              255
 
-#define  NEXTION_EVENT_RELEASE             0
-#define  NEXTION_EVENT_PRESS               1
+#define NEXTION_EVENT_RELEASE             0
+#define NEXTION_EVENT_PRESS               1
 
 #define NEXTION_MODE_SLEEP                 0
 #define NEXTION_MODE_AWAKE                 1
@@ -158,23 +159,38 @@ class Nextion {
     uint8_t wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length);
 
 
-    uint8_t upload(uint8_t *buffer, size_t length) {
+    bool upload(uint8_t *buffer, size_t length) {
+      open(length);
+      do write(buffer[_length]); while (_length < length);
+      _length = 0;
+      return true;
+    }
+
+
+    bool open(size_t length) {
       uint32_t rate = baud();
-      size_t index = 0;
+      _signal = 0;
 
       if (rate) {
         send("whmi-wri " + String(length) + "," + String(rate) + ",0");
-
-        do {
-          if (!(index % 4096)) {
-            _signal = NEXTION_SERIAL_CYCLES;
-            while (uint8_t(_serial->read()) != 0x05) && _signal--);
-            if (!_signal) return false;
-          }
-          _serial->write(buffer[index++]);
-        } while (index < length);
+        _signal = NEXTION_SERIAL_CYCLES;
+        while ((uint8_t(_serial->read()) != 0x05) && _signal--);
       }
+      return _signal;
     }
+
+    bool write(uint8_t data) {
+      if (!(_length++ % 4096)) {
+        _signal = NEXTION_SERIAL_CYCLES;
+        while ((uint8_t(_serial->read()) != 0x05) && _signal--);
+        if (!_signal) return false;
+      }
+      _serial->write(data);
+      return true;
+    }
+
+
+
 };
 
 #endif
