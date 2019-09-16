@@ -21,5 +21,5 @@ void sendFormat(String s) {
 }
 
 void sendText(String s, nextionComponent c) {
-  nextion.write("p[" + String(c.page) + "].b[" + String(c.id) + "].txt=\"" + String(s) + "\"");
+  nextion.print("p[" + String(c.page) + "].b[" + String(c.id) + "].txt=\"" + String(s) + "\"");
 }
