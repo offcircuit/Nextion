@@ -56,7 +56,7 @@
 #define NEXTION_COLOR_BROWN BROWN          //  48192
 #define NEXTION_COLOR_RED RED              //  63488
 #define NEXTION_COLOR_YELLOW YELLOW        //  65504
-#define NEXTION_COLOR_WHITE WHITE         //  65535
+#define NEXTION_COLOR_WHITE WHITE          //  65535
 
 struct nextionComponent {
   int8_t page, id;
@@ -94,6 +94,7 @@ class Nextion {
     nextionOnTouch _onTouch;
     nextionOnPointer _onUpdate;
 
+    uint32_t baud();
     nextionCallback *callback(nextionEvent event, nextionOnEvent pointer);
     bool connect(bool mode = false);
     void flush();
@@ -104,12 +105,12 @@ class Nextion {
 
   public:
     Nextion(uint8_t rx, uint8_t tx);
-    uint32_t begin(uint32_t baud = 0);
+    uint32_t begin(uint32_t speed = 0);
     void attach();
     void attach(nextionComponent component, bool state, nextionOnEvent pointer);
     void attach(nextionEvent event, nextionOnEvent pointer);
     uint8_t backlight(uint8_t value);
-    bool baud(uint32_t rate, bool mode = false);
+    bool baud(uint32_t speed, bool mode = false);
     uint8_t bkcmd(uint8_t mode);
     uint8_t brush(uint16_t c);
     uint8_t circle(uint16_t x, uint16_t y, uint16_t r, uint16_t c);
@@ -155,6 +156,16 @@ class Nextion {
     uint8_t wakeupPage(uint8_t page = 255);
     uint8_t wave(uint8_t id, uint8_t channel, uint8_t data);
     uint8_t wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length);
+
+
+    uint8_t upload(uint8_t *buffer, size_t length) {
+      uint32_t rate = baud();
+      if (rate) {
+        flush();
+        send("whmi-wri " + String(length) + "," + String(rate) + ",res0");
+      }
+    }
+
 };
 
 #endif
