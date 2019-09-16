@@ -73,7 +73,7 @@ class Nextion {
     String _data = "";
     size_t _length = 0;
     SoftwareSerial *_serial;
-    uint16_t _signal = NEXTION_SERIAL_CYCLES;
+    uint8_t _signal = NEXTION_SERIAL_CYCLES;
 
   private:
     typedef void (*nextionOnChange) (bool);
@@ -160,12 +160,21 @@ class Nextion {
 
     uint8_t upload(uint8_t *buffer, size_t length) {
       uint32_t rate = baud();
+      size_t index = 0;
+
       if (rate) {
-        flush();
-        send("whmi-wri " + String(length) + "," + String(rate) + ",res0");
+        send("whmi-wri " + String(length) + "," + String(rate) + ",0");
+
+        do {
+          if (!(index % 4096)) {
+            _signal = NEXTION_SERIAL_CYCLES;
+            while (uint8_t(_serial->read()) != 0x05) && _signal--);
+            if (!_signal) return false;
+          }
+          _serial->write(buffer[index++]);
+        } while (index < length);
       }
     }
-
 };
 
 #endif
