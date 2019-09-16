@@ -95,14 +95,15 @@ class Nextion {
     nextionOnPointer _onUpdate;
 
     nextionCallback *callback(nextionEvent event, nextionOnEvent pointer);
-    bool init();
     void flush();
+    bool init(bool mode = false);
     uint8_t read();
+    uint8_t readln();
     void send(String data);
 
   public:
     Nextion(uint8_t rx, uint8_t tx);
-    uint32_t begin(uint32_t baud = 0);
+    uint32_t begin(uint32_t baud = 0, bool mode = false);
     void attach();
     void attach(nextionComponent component, bool state, nextionOnEvent pointer);
     void attach(nextionEvent event, nextionOnEvent pointer);
@@ -139,9 +140,9 @@ class Nextion {
     uint8_t page(uint8_t page);
     uint8_t picture(uint16_t x, uint16_t y, uint8_t resource);
     uint8_t print(String data);
-    uint8_t reboot();
     uint8_t rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t c);
     uint8_t reply(bool state);
+    uint8_t reset();
     uint8_t sendxy(bool state);
     uint8_t show(uint8_t id);
     uint8_t sleep();
