@@ -3,13 +3,12 @@
 
 #include <sys/types.h>
 #include <SoftwareSerial.h>
-#include <Arduino.h>
 
 #define NEXTION_BUFFER_SIZE                10
 #define NEXTION_SERIAL_CYCLES              255
 
-#define NEXTION_EVENT_RELEASE             0
-#define NEXTION_EVENT_PRESS               1
+#define NEXTION_EVENT_RELEASE              0
+#define NEXTION_EVENT_PRESS                1
 
 #define NEXTION_MODE_SLEEP                 0
 #define NEXTION_MODE_AWAKE                 1
@@ -142,6 +141,7 @@ class Nextion {
     void onStart(nextionOnPointer pointer);
     void onTouch(nextionOnTouch pointer);
     void onUpdate(nextionOnPointer pointer);
+    bool open(size_t length);
     int16_t page();
     uint8_t page(uint8_t page);
     uint8_t picture(uint16_t x, uint16_t y, uint8_t resource);
@@ -153,42 +153,14 @@ class Nextion {
     uint8_t show(uint8_t id);
     uint8_t sleep();
     uint8_t text(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t font, uint16_t foreground, uint16_t background, uint8_t alignX, uint8_t alignY, uint8_t fill, String text);
+    bool upload(uint8_t *buffer, size_t length);
     uint8_t waitSerial(uint16_t seconds = 0);
     uint8_t waitTouch(uint16_t seconds = 0);
     uint8_t wakeup();
     uint8_t wakeupPage(uint8_t page = 255);
     uint8_t wave(uint8_t id, uint8_t channel, uint8_t data);
     uint8_t wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length);
-
-
-    bool upload(uint8_t *buffer, size_t length) {
-      if (open(length)) do write(buffer[_index++]); while (_index < length);
-      return true;
-    }
-
-
-    bool open(size_t length) {
-      uint32_t rate = baud();
-      if (rate) {
-        _index = 0;
-        _map = length;
-        send("whmi-wri " + String(_map) + "," + String(rate) + ",0");
-        return true;
-      }
-    }
-
-    bool write(uint8_t data) {
-      if (!(_index++ % 4096)) {
-        _signal = NEXTION_SERIAL_CYCLES;
-        while ((uint8_t(_serial->read()) != 0x05) && _signal--);
-        if (!_signal) return false;
-      }
-      _serial->write(data);
-      return true;
-    }
-
-
-
+    bool write(uint8_t data);
 };
 
 #endif
