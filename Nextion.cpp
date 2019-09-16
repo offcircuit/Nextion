@@ -1,5 +1,4 @@
 #include "Nextion.h"
-#include "Arduino.h"
 
 Nextion::Nextion(uint8_t rx, uint8_t tx) {
   _serial = new SoftwareSerial(rx, tx);
