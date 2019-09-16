@@ -423,7 +423,7 @@ uint8_t Nextion::wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length)
 bool Nextion::write(uint8_t data) {
   if (_index < _map) {
     _serial->write(data);
-    if (!(_index++ % 4096)) {
+    if (!(_index++ % 4096) || (_index == _map)) {
       _signal = NEXTION_SERIAL_CYCLES;
       while ((uint8_t(_serial->read()) != 0x05) && _signal--);
       return _signal;
