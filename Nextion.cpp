@@ -42,7 +42,7 @@ uint8_t Nextion::backlight(uint8_t value) {
   return print("dim=" + String(value));
 }
 
-bool Nextion::baud(uint32_t rate, bool mode = false) {
+bool Nextion::baud(uint32_t rate, bool mode) {
   flush();
   send("baud=" + String(rate));
 
@@ -383,7 +383,7 @@ uint8_t Nextion::wakeup() {
   return print("sleep=0");
 }
 
-uint8_t Nextion::wakeupPage(uint8_t page = 255) {
+uint8_t Nextion::wakeupPage(uint8_t page) {
   return print("wup=" + String(page));
 }
 
