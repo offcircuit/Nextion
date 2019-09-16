@@ -4,19 +4,15 @@ Nextion::Nextion(uint8_t rx, uint8_t tx) {
   _serial = new SoftwareSerial(rx, tx);
 }
 
-uint32_t Nextion::begin(uint32_t rate) {
-  const uint8_t map[8] = {48, 24, 16, 8, 4, 2, 1, 0};
-  uint8_t index = 0;
+uint32_t Nextion::begin(uint32_t speed) {
+  uint32_t rate = baud();
 
-  do _serial->begin(map[index] * 2400UL);
-  while (!connect() && (7 > ++index));
-
-  if (rate && (rate != map[index] * 2400UL)) {
-    if (baud(rate)) return rate;
+  if (speed && (speed != rate)) {
+    if (baud(speed)) return speed;
     else return begin();
   }
 
-  return map[index] * 2400UL;
+  return rate;
 }
 
 void Nextion::attach() {
@@ -42,9 +38,19 @@ uint8_t Nextion::backlight(uint8_t value) {
   return print("dim=" + String(value));
 }
 
-bool Nextion::baud(uint32_t rate, bool mode) {
+uint32_t Nextion::baud() {
+  const uint8_t map[8] = {48, 24, 16, 8, 4, 2, 1, 0};
+  uint8_t index = 0;
+
+  do _serial->begin(map[index] * 2400UL);
+  while (!connect() && (7 > ++index));
+
+  return map[index] * 2400UL;
+}
+
+bool Nextion::baud(uint32_t speed, bool mode) {
   flush();
-  send("baud=" + String(rate));
+  send("baud=" + String(speed));
 
   restore();
   while (!_serial->available() && _signal--);
@@ -53,7 +59,7 @@ bool Nextion::baud(uint32_t rate, bool mode) {
     _buffer[0] = uint8_t(_serial->read());
     flush();
     if (_buffer[0] != NEXTION_BKCMD_ASSIGN_FAILED) {
-      _serial->begin(rate);
+      _serial->begin(speed);
       return connect(mode);
     }
   }
@@ -324,7 +330,7 @@ uint8_t Nextion::readln() {
   restore();
   do while (_serial->available()) {
       _data += char(_serial->read());
-      _signal = NEXTION_SERIAL_CYCLES;;
+      _signal = NEXTION_SERIAL_CYCLES;
     } while (_signal--);
   return _data.length();
 }
