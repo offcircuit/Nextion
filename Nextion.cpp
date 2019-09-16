@@ -279,6 +279,18 @@ void Nextion::onUpdate(nextionOnPointer pointer) {
   _onUpdate = pointer;
 }
 
+bool Nextion::open(size_t length) {
+  uint32_t rate = baud();
+  if (rate) {
+    _index = 0;
+    _map = length;
+    send("whmi-wri " + String(_map) + "," + String(rate) + ",0");
+    _signal = NEXTION_SERIAL_CYCLES;
+    while ((uint8_t(_serial->read()) != 0x05) && _signal--);
+    return _signal;
+  }
+}
+
 int16_t Nextion::page() {
   if (print("sendme") == NEXTION_CMD_CURRENT_PAGE) return uint8_t(_buffer[1]);
   else return -1;
@@ -375,6 +387,13 @@ uint8_t Nextion::text(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t fo
                String(font) + "," + String(foreground) + "," + String(background) + "," + String(alignX) + "," + String(alignY) + "," + String(fill) + "," + text);
 }
 
+bool Nextion::upload(uint8_t *buffer, size_t length) {
+  if (open(length))
+    do if (!write(buffer[_index++])) return false;
+    while (_index < length);
+  return true;
+}
+
 uint8_t Nextion::waitSerial(uint16_t seconds) {
   return print("ussp=" + String(seconds));
 }
@@ -399,4 +418,16 @@ uint8_t Nextion::wave(uint8_t id, uint8_t channel, uint8_t *data, size_t length)
   if (print("addt " + String(id) + "," + String(channel) + "," + String(length)) == NEXTION_CMD_TRANSPARENT_DATA_READY)
     for (size_t i = 0; i < length;) _serial->write(data[i++]);
   if (read()) return _buffer[0];
+}
+
+bool Nextion::write(uint8_t data) {
+  if (_index < _map) {
+    _serial->write(data);
+    if (!(_index++ % 4096)) {
+      _signal = NEXTION_SERIAL_CYCLES;
+      while ((uint8_t(_serial->read()) != 0x05) && _signal--);
+      return _signal;
+    }
+    return true;
+  }
 }
