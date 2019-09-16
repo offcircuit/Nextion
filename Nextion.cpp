@@ -348,10 +348,10 @@ uint8_t Nextion::reset() {
 }
 
 void Nextion::restore() {
-  _data = "";
-  _length = NEXTION_BUFFER_SIZE;
-  _signal = NEXTION_SERIAL_CYCLES;
   _buffer[0] = 0x00;
+  _data = "";
+  _length = 0;
+  _signal = NEXTION_SERIAL_CYCLES;
 }
 
 void Nextion::send(String data) {
