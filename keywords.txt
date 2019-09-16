@@ -43,6 +43,7 @@ onReady	KEYWORD2
 onStart	KEYWORD2
 onTouch	KEYWORD2
 onUpdate	KEYWORD2
+open	KEYWORD2
 page	KEYWORD2
 picture	KEYWORD2
 reboot	KEYWORD2
@@ -54,11 +55,13 @@ sendxy	KEYWORD2
 show	KEYWORD2
 sleep	KEYWORD2
 text	KEYWORD2
+upload	KEYWORD2
 waitSerial	KEYWORD2
 waitTouch	KEYWORD2
 wakeup	KEYWORD2
 wakeupPage	KEYWORD2
 wave	KEYWORD2
+write	KEYWORD2
 
 ##################################################
 # Methods				(KEYWORD3)
