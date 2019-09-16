@@ -9,10 +9,10 @@ uint32_t Nextion::begin(uint32_t rate) {
   uint8_t index = 0;
 
   do _serial->begin(map[index] * 2400UL);
-  while (!init(false) && (7 > ++index));
+  while (!init() && (7 > ++index));
 
   if (rate && (rate != map[index] * 2400UL)) {
-    if (baud(rate, true)) return rate;
+    if (baud(rate)) return rate;
     else return begin();
   }
 
@@ -197,6 +197,7 @@ uint8_t Nextion::hide(uint8_t id) {
 }
 
 bool Nextion::init(bool mode) {
+  flush();
   if (mode) {
     send("DRAKJHSUYDGBNCJHGJKSHBDN");
     send("connect");
