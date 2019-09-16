@@ -72,7 +72,9 @@ class Nextion {
   protected:
     uint8_t *_buffer = (uint8_t *) malloc(NEXTION_BUFFER_SIZE);
     String _data = "";
+    size_t _index = 0;
     size_t _length = 0;
+    size_t _map;
     SoftwareSerial *_serial;
     uint8_t _signal = NEXTION_SERIAL_CYCLES;
 
@@ -160,27 +162,23 @@ class Nextion {
 
 
     bool upload(uint8_t *buffer, size_t length) {
-      open(length);
-      do write(buffer[_length]); while (_length < length);
-      _length = 0;
+      if (open(length)) do write(buffer[_index++]); while (_index < length);
       return true;
     }
 
 
     bool open(size_t length) {
       uint32_t rate = baud();
-      _signal = 0;
-
       if (rate) {
-        send("whmi-wri " + String(length) + "," + String(rate) + ",0");
-        _signal = NEXTION_SERIAL_CYCLES;
-        while ((uint8_t(_serial->read()) != 0x05) && _signal--);
+        _index = 0;
+        _map = length;
+        send("whmi-wri " + String(_map) + "," + String(rate) + ",0");
+        return true;
       }
-      return _signal;
     }
 
     bool write(uint8_t data) {
-      if (!(_length++ % 4096)) {
+      if (!(_index++ % 4096)) {
         _signal = NEXTION_SERIAL_CYCLES;
         while ((uint8_t(_serial->read()) != 0x05) && _signal--);
         if (!_signal) return false;
