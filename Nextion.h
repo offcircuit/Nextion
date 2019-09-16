@@ -3,7 +3,6 @@
 
 #include <sys/types.h>
 #include <SoftwareSerial.h>
-#include <Arduino.h>
 
 #define NEXTION_BUFFER_SIZE                10
 #define NEXTION_SERIAL_CYCLES              255
@@ -50,14 +49,14 @@
 #define NEXTION_BKCMD_RETURN_FAILS         2
 #define NEXTION_BKCMD_RETURN_ALL           3
 
-#define NEXTION_COLOR_BLACK                BLACK   //      0
-#define NEXTION_COLOR_BLUE                 BLUE    //     31
-#define NEXTION_COLOR_GREEN                GREEN   //   2016
-#define NEXTION_COLOR_GRAY                 GRAY    //  33840
-#define NEXTION_COLOR_BROWN                BROWN   //  48192
-#define NEXTION_COLOR_RED                  RED     //  63488
-#define NEXTION_COLOR_YELLOW               YELLOW  //  65504
-#define NEXTION_COLOR_WHITE                WHITE   //  65535
+#define NEXTION_COLOR_BLACK BLACK          //      0
+#define NEXTION_COLOR_BLUE BLUE            //     31
+#define NEXTION_COLOR_GREEN GREEN          //   2016
+#define NEXTION_COLOR_GRAY GRAY            //  33840
+#define NEXTION_COLOR_BROWN BROWN          //  48192
+#define NEXTION_COLOR_RED RED              //  63488
+#define NEXTION_COLOR_YELLOW YELLOW        //  65504
+#define NEXTION_COLOR_WHITE WHITE         //  65535
 
 struct nextionComponent {
   int8_t page, id;
@@ -71,7 +70,7 @@ struct nextionEvent {
 class Nextion {
   protected:
     uint8_t *_buffer = (uint8_t *) malloc(NEXTION_BUFFER_SIZE);
-    String _data;
+    String _data = "";
     size_t _length = 0;
     SoftwareSerial *_serial;
     uint16_t _signal = NEXTION_SERIAL_CYCLES;
@@ -96,11 +95,11 @@ class Nextion {
     nextionOnPointer _onUpdate;
 
     nextionCallback *callback(nextionEvent event, nextionOnEvent pointer);
-    void clearData();
+    bool connect(bool mode = false);
     void flush();
-    bool init(bool mode = false);
     uint8_t read();
     uint8_t readln();
+    void restore();
     void send(String data);
 
   public:
