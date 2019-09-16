@@ -4,30 +4,19 @@ Nextion::Nextion(uint8_t rx, uint8_t tx) {
   _serial = new SoftwareSerial(rx, tx);
 }
 
-uint32_t Nextion::begin(uint32_t baud, bool mode) {
-  const uint8_t rate[8] = {48, 24, 16, 8, 4, 2, 1, 0};
+uint32_t Nextion::begin(uint32_t rate) {
+  const uint8_t map[8] = {48, 24, 16, 8, 4, 2, 1, 0};
   uint8_t index = 0;
 
-  do _serial->begin(rate[index] * 2400UL);
-  while (!init(mode) && (7 > ++index));
+  do _serial->begin(map[index] * 2400UL);
+  while (!init(false) && (7 > ++index));
 
-  if (baud && (baud != rate[index] * 2400UL)) {
-    send("baud=" + String(baud));
-
-    _signal = NEXTION_SERIAL_CYCLES;
-    while (!_serial->available() && _signal--);
-
-    if (_signal) {
-      _buffer[0] = uint8_t(_serial->read());
-      flush();
-      if (_buffer[0] != NEXTION_BKCMD_ASSIGN_FAILED) {
-        _serial->begin(baud);
-        if (init(mode)) return baud;
-      }
-    }
-    return begin();
+  if (rate && (rate != map[index] * 2400UL)) {
+    if (baud(rate, true)) return rate;
+    else return begin();
   }
-  return rate[index] * 2400UL;
+
+  return map[index] * 2400UL;
 }
 
 void Nextion::attach() {
@@ -53,6 +42,23 @@ uint8_t Nextion::backlight(uint8_t value) {
   return print("dim=" + String(value));
 }
 
+bool Nextion::baud(uint32_t rate, bool mode = false) {
+  flush();
+  send("baud=" + String(rate));
+
+  clearData();
+  while (!_serial->available() && _signal--);
+
+  if (_signal) {
+    _buffer[0] = uint8_t(_serial->read());
+    flush();
+    if (_buffer[0] != NEXTION_BKCMD_ASSIGN_FAILED) {
+      _serial->begin(rate);
+      return init(mode);
+    }
+  }
+}
+
 uint8_t Nextion::bkcmd(uint8_t mode) {
   return print("bkcmd=" + String(mode));
 }
@@ -75,6 +81,13 @@ uint8_t Nextion::circle(uint16_t x, uint16_t y, uint16_t r, uint16_t c) {
 
 uint8_t Nextion::clear(uint16_t c) {
   return print("cls " + String(c));
+}
+
+void Nextion::clearData() {
+  _data = "";
+  _length = NEXTION_BUFFER_SIZE;
+  _signal = NEXTION_SERIAL_CYCLES;
+  while (_length) _buffer[--_length] = 0x00;
 }
 
 uint8_t Nextion::click(uint8_t id, bool event) {
@@ -289,11 +302,8 @@ uint8_t Nextion::print(String data) {
 
 uint8_t Nextion::read() {
   uint8_t exit = 0;
-  _data = "";
-  _length = NEXTION_BUFFER_SIZE;
-  _signal = NEXTION_SERIAL_CYCLES;
-  while (_length) _buffer[--_length] = 0x00;
 
+  clearData();
   do if (_serial->available()) {
       uint8_t data = uint8_t(_serial->read());
       _signal = NEXTION_SERIAL_CYCLES;
@@ -303,7 +313,7 @@ uint8_t Nextion::read() {
         case NEXTION_CMD_STRING_DATA_ENCLOSED:
           _data += char(data);
           _length = 1;
-          exit = (data == 0xFF) ? exit + 1 : 0;
+          exit = (data == 0xFF) * (exit + 1);
           break;
 
         case NEXTION_CMD_NUMERIC_DATA_ENCLOSED:
@@ -313,18 +323,14 @@ uint8_t Nextion::read() {
 
         default:
           _buffer[_length++] = uint8_t(data);
-          exit = (data == 0xFF) ? exit + 1 : 0;
+          exit = (data == 0xFF) * (exit + 1);
       }
     } while (_signal-- && (exit != 3));
   return _length;
 }
 
 uint8_t Nextion::readln() {
-  _data = "";
-  _length = NEXTION_BUFFER_SIZE;
-  _signal = NEXTION_SERIAL_CYCLES;
-  while (_length) _buffer[--_length] = 0x00;
-
+  clearData();
   do while (_serial->available()) {
       _data += char(_serial->read());
       _signal = NEXTION_SERIAL_CYCLES;;
@@ -375,6 +381,10 @@ uint8_t Nextion::waitTouch(uint16_t seconds) {
 
 uint8_t Nextion::wakeup() {
   return print("sleep=0");
+}
+
+uint8_t Nextion::wakeupPage(uint8_t page = 255) {
+  return print("wup=" + String(page));
 }
 
 uint8_t Nextion::wave(uint8_t id, uint8_t channel, uint8_t data) {
