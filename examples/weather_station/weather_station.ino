@@ -10,7 +10,6 @@ Nextion nextion(4, 5);
 SDHT dht;
 
 void setup() {
-  Serial.begin(115200);
   nextion.begin(9600);
 
   for (int i = 1; i <= 10; i++) nextion.attach({2, i, NEXTION_EVENT_RELEASE}, numericEvent);
