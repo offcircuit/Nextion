@@ -284,6 +284,7 @@ bool Nextion::open(size_t length) {
   if (rate) {
     _index = 0;
     _map = length;
+    flush();
     send("whmi-wri " + String(_map) + "," + String(rate) + ",0");
     _signal = NEXTION_SERIAL_CYCLES;
     while ((uint8_t(_serial->read()) != 0x05) && _signal--);
