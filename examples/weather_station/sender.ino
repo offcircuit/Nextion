@@ -9,7 +9,7 @@ void sendData() {
   sendText(w[dtime.weekday] + ", " + String(dtime.day) + " " + m[dtime.month - 1] + " " + String(dtime.year), {0, 2});
   sendText(decimate(dtime.hour) + ":" + decimate(dtime.minute) + ":" + decimate(dtime.second), {0, 1});
 
-  if (dht.broadcast(DHT22, 2)) {
+  if (dht.read(DHT22, 2)) {
     sendText(String(dht.celsius, 0) + String(char(0xB0)) + "c", {0, 7});
     sendText(String(dht.humidity, 1) + "%", {0, 6});
   }
