@@ -10,8 +10,8 @@ void sendData() {
   sendText(decimate(dtime.hour) + ":" + decimate(dtime.minute) + ":" + decimate(dtime.second), {0, 1});
 
   if (dht.read(DHT22, 2)) {
-    sendText(String(dht.celsius, 0) + String(char(0xB0)) + "c", {0, 7});
-    sendText(String(dht.humidity, 1) + "%", {0, 6});
+    sendText(String(dht.celsius / 10, 0) + String(char(0xB0)) + "c", {0, 7});
+    sendText(String(dht.humidity / 10, 1) + "%", {0, 6});
   }
 }
 
