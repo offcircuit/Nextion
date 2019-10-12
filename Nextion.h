@@ -98,7 +98,7 @@ class Nextion {
 
     uint32_t baud();
     nextionCallback *callback(nextionEvent event, nextionOnEvent pointer);
-    bool connect(bool mode = false);
+    bool connect();
     void flush();
     uint8_t read();
     uint8_t readln();
@@ -112,7 +112,6 @@ class Nextion {
     void attach(nextionComponent component, bool state, nextionOnEvent pointer);
     void attach(nextionEvent event, nextionOnEvent pointer);
     uint8_t backlight(uint8_t value);
-    bool baud(uint32_t speed, bool mode = false);
     uint8_t bkcmd(uint8_t mode);
     uint8_t brush(uint16_t c);
     uint8_t circle(uint16_t x, uint16_t y, uint16_t r, uint16_t c);
@@ -150,6 +149,7 @@ class Nextion {
     uint8_t reply(bool state);
     uint8_t reset();
     uint8_t sendxy(bool state);
+    uint32_t setBaud(uint32_t speed);
     uint8_t show(uint8_t id);
     uint8_t sleep();
     uint8_t text(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t font, uint16_t foreground, uint16_t background, uint8_t alignX, uint8_t alignY, uint8_t fill, String text);

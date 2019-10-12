@@ -6,12 +6,7 @@ Nextion::Nextion(uint8_t rx, uint8_t tx) {
 
 uint32_t Nextion::begin(uint32_t speed) {
   uint32_t rate = baud();
-
-  if (speed && (speed != rate)) {
-    if (baud(speed)) return speed;
-    else return begin();
-  }
-
+  if (speed && (speed != rate)) return setBaud(speed);
   return rate;
 }
 
@@ -48,23 +43,6 @@ uint32_t Nextion::baud() {
   return map[index] * 2400UL;
 }
 
-bool Nextion::baud(uint32_t speed, bool mode) {
-  flush();
-  send("baud=" + String(speed));
-
-  restore();
-  while (!_serial->available() && _signal--);
-
-  if (_signal) {
-    _buffer[0] = uint8_t(_serial->read());
-    flush();
-    if (_buffer[0] != NEXTION_BKCMD_ASSIGN_FAILED) {
-      _serial->begin(speed);
-      return connect(mode);
-    }
-  }
-}
-
 uint8_t Nextion::bkcmd(uint8_t mode) {
   return print("bkcmd=" + String(mode));
 }
@@ -93,15 +71,12 @@ uint8_t Nextion::click(uint8_t id, bool event) {
   return print("click " + String(id) + "," + String(event));
 }
 
-bool Nextion::connect(bool mode) {
+bool Nextion::connect() {
   flush();
-  if (mode) {
-    send("DRAKJHSUYDGBNCJHGJKSHBDN");
-    send("connect");
-    send(String(char(0xFF) + char(0xFF)) + "connect");
-    flush();
-  }
-
+  send("DRAKJHSUYDGBNCJHGJKSHBDN");
+  send("connect");
+  send(String(char(0xFF) + char(0xFF)) + "connect");
+  flush();
   send("");
   flush();
   send("connect");
@@ -284,7 +259,6 @@ bool Nextion::open(size_t length) {
   if (rate) {
     _index = 0;
     _map = length;
-    flush();
     send("whmi-wri " + String(_map) + "," + String(rate) + ",0");
     _signal = NEXTION_SERIAL_CYCLES;
     while ((uint8_t(_serial->read()) != 0x05) && _signal--);
@@ -373,6 +347,12 @@ void Nextion::send(String data) {
 
 uint8_t Nextion::sendxy(bool state) {
   return print("sendxy=" + String(state));
+}
+
+uint32_t Nextion::setBaud(uint32_t speed) {
+  flush();
+  send("baud=" + String(speed));
+  return baud();
 }
 
 uint8_t Nextion::show(uint8_t id) {
