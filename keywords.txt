@@ -52,6 +52,7 @@ rectangle	KEYWORD2
 reply	KEYWORD2
 reset	KEYWORD2
 sendxy	KEYWORD2
+setBaud	KEYWORD2
 show	KEYWORD2
 sleep	KEYWORD2
 text	KEYWORD2
