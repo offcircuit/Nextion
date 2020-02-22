@@ -208,7 +208,7 @@ int16_t Nextion::listen() {
             nextionCallback *item = _callbacks;
             while (item) {
               if ((item->event.page == _buffer[1]) && (item->event.id == _buffer[2]) && (item->event.state == _buffer[3]) && (item->pointer)) {
-                item->pointer(_buffer[1], _buffer[2], _buffer[2]);
+                item->pointer(_buffer[1], _buffer[2], _buffer[3]);
                 break;
               }
               item = item->next;
