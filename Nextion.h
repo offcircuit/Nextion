@@ -49,14 +49,14 @@
 #define NEXTION_BKCMD_RETURN_FAILS         2
 #define NEXTION_BKCMD_RETURN_ALL           3
 
-#define NEXTION_COLOR_BLACK BLACK          //      0
-#define NEXTION_COLOR_BLUE BLUE            //     31
-#define NEXTION_COLOR_GREEN GREEN          //   2016
-#define NEXTION_COLOR_GRAY GRAY            //  33840
-#define NEXTION_COLOR_BROWN BROWN          //  48192
-#define NEXTION_COLOR_RED RED              //  63488
-#define NEXTION_COLOR_YELLOW YELLOW        //  65504
-#define NEXTION_COLOR_WHITE WHITE          //  65535
+#define NEXTION_COLOR_BLACK 0              //  BLACK 
+#define NEXTION_COLOR_BLUE 31              //  BLUE
+#define NEXTION_COLOR_GREEN 2016           //  GREEN
+#define NEXTION_COLOR_GRAY 33840           //  GRAY
+#define NEXTION_COLOR_BROWN 48192          //  BROWN
+#define NEXTION_COLOR_RED 63488            //  RED
+#define NEXTION_COLOR_YELLOW 65504         //  YELLOW
+#define NEXTION_COLOR_WHITE 65535          //  WHITE
 
 struct nextionComponent {
   int8_t page, id;
@@ -66,6 +66,11 @@ struct nextionEvent {
   int8_t page, id;
   bool state;
 };
+
+typedef void (*nextionOnChange) (bool);
+typedef void (*nextionOnEvent) (uint8_t, uint8_t, bool);
+typedef void (*nextionOnPointer) ();
+typedef void (*nextionOnTouch) (uint16_t, uint16_t, bool);
 
 class Nextion {
   protected:
@@ -78,11 +83,6 @@ class Nextion {
     uint8_t _signal = NEXTION_SERIAL_CYCLES;
 
   private:
-    typedef void (*nextionOnChange) (bool);
-    typedef void (*nextionOnEvent) (uint8_t, uint8_t, bool);
-    typedef void (*nextionOnPointer) ();
-    typedef void (*nextionOnTouch) (uint16_t, uint16_t, bool);
-
     struct nextionCallback {
       nextionCallback *next;
       nextionEvent event;
